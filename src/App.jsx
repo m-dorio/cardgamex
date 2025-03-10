@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import CardCreator from "./components/CardCreator";
 import GameBoard from "./components/GameBoard";
 import socket from "./socket";
@@ -9,72 +10,83 @@ const App = () => {
     { name: "Lightning Phoenix", attack: 15 },
     { name: "Water Serpent", attack: 10 },
   ]);
-  const [roomId, setRoomId] = useState(null);
-  const [mode, setMode] = useState(null);
-  const [joinRoomId, setJoinRoomId] = useState(""); // For joining a room
+  const [roomId, setRoomId] = useState("");
+  const [mode, setMode] = useState("");
+  const [playerName, setPlayerName] = useState("");
+  const [playerImage, setPlayerImage] = useState("");
+  const [gameStarted, setGameStarted] = useState(false);
 
-  // Handle room creation
-  useEffect(() => {
-    if (mode === "multiplayer" && !roomId) {
-      socket.emit("create-room", (newRoom) => {
-        setRoomId(newRoom);
-        socket.emit("join-game", newRoom, { playerCards });
-      });
+  const createRoom = () => {
+    if (!playerName.trim()) {
+      alert("Please enter your name before starting.");
+      return;
     }
-  }, [mode]);
-
-  // Handle joining an existing room
-  const handleJoinRoom = () => {
-    if (joinRoomId) {
-      setMode("multiplayer");
-      setRoomId(joinRoomId);
-      socket.emit("join-game", joinRoomId, { playerCards });
-    }
+    const newRoomId = uuidv4().slice(0, 6); // Generate short random ID
+    setRoomId(newRoomId);
+    socket.emit("create-room", newRoomId);
   };
 
-  // Add custom card
-  const addCustomCard = (newCard) => {
-    setPlayerCards((prevCards) => [...prevCards, newCard]);
+  const joinGame = () => {
+    if (!roomId.trim() || !playerName.trim()) {
+      alert("Please enter a Room ID and your name.");
+      return;
+    }
+    socket.emit("join-game", roomId, {
+      name: playerName,
+      image: playerImage || "/default-avatar.png",
+    });
+    setGameStarted(true);
   };
 
   return (
-    <div className="game-container p-4">
-      <h1 className="text-2xl font-bold mb-4">⚔ Trading Card Game ⚔</h1>
+    <div className="game-container">
+      <h1>Trading Card Game</h1>
 
-      {/* Mode Selection */}
-      {!mode && (
-        <div className="mb-4">
-          <button className="bg-blue-500 text-white p-2 m-2 rounded" onClick={() => setMode("bot")}>
-            Play vs AI
-          </button>
-          <button className="bg-green-500 text-white p-2 m-2 rounded" onClick={() => setMode("multiplayer")}>
-            Create Multiplayer Game
-          </button>
+      {!gameStarted ? (
+        <div>
+          {!mode && (
+            <>
+              <button onClick={() => setMode("bot")}>Play vs AI</button>
+              <button onClick={() => setMode("multiplayer")}>Play Multiplayer</button>
+            </>
+          )}
 
-          {/* Join existing multiplayer room */}
-          <div className="mt-4">
-            <input
-              type="text"
-              placeholder="Enter Room ID"
-              value={joinRoomId}
-              onChange={(e) => setJoinRoomId(e.target.value)}
-              className="border p-2"
-            />
-            <button className="bg-yellow-500 text-white p-2 ml-2 rounded" onClick={handleJoinRoom}>
-              Join Room
-            </button>
-          </div>
+          {mode === "multiplayer" && (
+            <div>
+              {!roomId ? (
+                <button onClick={createRoom}>Create Multiplayer Room</button>
+              ) : (
+                <p>Room ID: <strong>{roomId}</strong> (Share this with a friend)</p>
+              )}
+
+              <input
+                type="text"
+                placeholder="Enter Your Name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Image URL (Optional)"
+                value={playerImage}
+                onChange={(e) => setPlayerImage(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Enter Room ID to Join"
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+              />
+              <button onClick={joinGame}>Join Room</button>
+            </div>
+          )}
         </div>
+      ) : (
+        <GameBoard playerCards={playerCards} mode={mode} roomId={roomId} />
       )}
 
-      {/* Display Room ID when created */}
-      {mode === "multiplayer" && roomId && <p className="text-green-600">Room ID: {roomId}</p>}
-
-      {/* Card Creator */}
-      <CardCreator addCustomCard={addCustomCard} />
-
-      {/* Game Board */}
-      {mode && <GameBoard playerCards={playerCards} mode={mode} roomId={roomId} />}
+      <CardCreator addCustomCard={(card) => setPlayerCards([...playerCards, card])} />
     </div>
   );
 };
