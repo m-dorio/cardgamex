@@ -15,13 +15,34 @@ const App = () => {
   const [playerName, setPlayerName] = useState("");
   const [playerImage, setPlayerImage] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
+
+  // Load leaderboard from local storage
+  useEffect(() => {
+    const storedScores = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    setLeaderboard(storedScores);
+  }, []);
+
+  const updateLeaderboard = (result) => {
+    const scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    const existingPlayer = scores.find((p) => p.name === playerName);
+
+    if (existingPlayer) {
+      existingPlayer[result] += 1;
+    } else {
+      scores.push({ name: playerName, wins: result === "wins" ? 1 : 0, losses: result === "losses" ? 1 : 0 });
+    }
+
+    localStorage.setItem("leaderboard", JSON.stringify(scores));
+    setLeaderboard(scores);
+  };
 
   const createRoom = () => {
     if (!playerName.trim()) {
       alert("Please enter your name before starting.");
       return;
     }
-    const newRoomId = uuidv4().slice(0, 6); // Generate short random ID
+    const newRoomId = uuidv4().slice(0, 6);
     setRoomId(newRoomId);
     socket.emit("create-room", newRoomId);
   };
@@ -38,12 +59,27 @@ const App = () => {
     setGameStarted(true);
   };
 
+  const handleExitToLobby = () => {
+    setGameStarted(false);
+    setMode("");
+    setRoomId("");
+  };
+
   return (
     <div className="game-container">
       <h1>Trading Card Game</h1>
 
       {!gameStarted ? (
         <div>
+          <h2>🏆 Leaderboard</h2>
+          <ul>
+            {leaderboard.map((player, index) => (
+              <li key={index}>
+                {player.name} - Wins: {player.wins} | Losses: {player.losses}
+              </li>
+            ))}
+          </ul>
+
           {!mode && (
             <>
               <button onClick={() => setMode("bot")}>Play vs AI</button>
@@ -83,7 +119,7 @@ const App = () => {
           )}
         </div>
       ) : (
-        <GameBoard playerCards={playerCards} mode={mode} roomId={roomId} />
+        <GameBoard playerCards={playerCards} mode={mode} roomId={roomId} updateLeaderboard={updateLeaderboard} onExit={handleExitToLobby} />
       )}
 
       <CardCreator addCustomCard={(card) => setPlayerCards([...playerCards, card])} />
