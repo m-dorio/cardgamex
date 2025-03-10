@@ -11,19 +11,28 @@ const App = () => {
   ]);
   const [roomId, setRoomId] = useState(null);
   const [mode, setMode] = useState(null);
+  const [joinRoomId, setJoinRoomId] = useState(""); // For joining a room
 
-  // Handle room creation for multiplayer mode
+  // Handle room creation
   useEffect(() => {
-    if (mode === "multiplayer") {
-      socket.emit("create-room", (room) => {
-        setRoomId(room);
+    if (mode === "multiplayer" && !roomId) {
+      socket.emit("create-room", (newRoom) => {
+        setRoomId(newRoom);
+        socket.emit("join-game", newRoom, { playerCards });
       });
-    } else {
-      setRoomId(null); // Reset room ID when switching to AI mode
     }
   }, [mode]);
 
-  // Add custom card to the player's deck
+  // Handle joining an existing room
+  const handleJoinRoom = () => {
+    if (joinRoomId) {
+      setMode("multiplayer");
+      setRoomId(joinRoomId);
+      socket.emit("join-game", joinRoomId, { playerCards });
+    }
+  };
+
+  // Add custom card
   const addCustomCard = (newCard) => {
     setPlayerCards((prevCards) => [...prevCards, newCard]);
   };
@@ -39,15 +48,32 @@ const App = () => {
             Play vs AI
           </button>
           <button className="bg-green-500 text-white p-2 m-2 rounded" onClick={() => setMode("multiplayer")}>
-            Play Multiplayer
+            Create Multiplayer Game
           </button>
+
+          {/* Join existing multiplayer room */}
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Enter Room ID"
+              value={joinRoomId}
+              onChange={(e) => setJoinRoomId(e.target.value)}
+              className="border p-2"
+            />
+            <button className="bg-yellow-500 text-white p-2 ml-2 rounded" onClick={handleJoinRoom}>
+              Join Room
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Display Room ID when created */}
+      {mode === "multiplayer" && roomId && <p className="text-green-600">Room ID: {roomId}</p>}
 
       {/* Card Creator */}
       <CardCreator addCustomCard={addCustomCard} />
 
-      {/* Game Board only renders if a mode is selected */}
+      {/* Game Board */}
       {mode && <GameBoard playerCards={playerCards} mode={mode} roomId={roomId} />}
     </div>
   );
