@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import socket from "../socket";
 
 const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => {
@@ -11,7 +11,7 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
   const [enemyId, setEnemyId] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const scoreboard = useRef({}); // ✅ Keep scoreboard persistent across renders
+  const [scoreboard, setScoreboard] = useState({});
 
   useEffect(() => {
     if (mode === "multiplayer") {
@@ -30,9 +30,15 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
         setPlayers(updatedPlayers);
       });
 
+      socket.on("update-scores", (scores) => {
+        console.log("🔄 Updating Scoreboard:", scores);
+        setScoreboard(scores);
+      });
+
       return () => {
         socket.off("update-players");
         socket.off("player-ready-update");
+        socket.off("update-scores");
       };
     }
   }, [mode, roomId]);
@@ -41,13 +47,10 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
     if (mode === "multiplayer") {
       socket.on("dice-roll-result", ({ turn, diceRolls }) => {
         setMessage("🎲 Rolling the dice...");
-
         setTimeout(() => {
           setTurn(turn);
           setGameStarted(true);
-          setMessage(
-            `🎲 Dice Roll: You (${diceRolls[socket.id] || "?"}) vs Opponent (${diceRolls[enemyId] || "?"})`
-          );
+          setMessage(`🎲 You (${diceRolls[playerId] || "?"}) vs Opponent (${diceRolls[enemyId] || "?"})`);
         }, 2000);
       });
 
@@ -80,8 +83,7 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
           if (newHP === 0) {
             setGameOver(true);
             updateLeaderboard("losses");
-            updateScoreboard(enemyId, "win");
-            updateScoreboard(playerId, "loss");
+            socket.emit("game-over", { roomId, winnerId: enemyId, loserId: playerId });
             setMessage("💀 You lost! Game Over.");
           }
           return newHP;
@@ -94,8 +96,7 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
           if (newHP === 0) {
             setGameOver(true);
             updateLeaderboard("wins");
-            updateScoreboard(playerId, "win");
-            updateScoreboard(enemyId, "loss");
+            socket.emit("game-over", { roomId, winnerId: playerId, loserId: enemyId });
             setMessage("🎉 You Won! Game Over.");
           }
           return newHP;
@@ -109,27 +110,29 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
     }
   }, [mode, roomId]);
 
-  const updateScoreboard = (player, result) => {
-    if (!scoreboard.current[player]) {
-      scoreboard.current[player] = { wins: 0, losses: 0 };
-    }
-
-    if (result === "win") {
-      scoreboard.current[player].wins += 1;
-    } else {
-      scoreboard.current[player].losses += 1;
-    }
+  const handleReady = () => {
+    socket.emit("player-ready", roomId);
   };
 
   const handlePlayerAttack = (card) => {
     if (gameOver || turn !== playerId) return;
 
-    const bonusMultiplier = 1 + Math.random() * 0.5;
-    const damage = Math.floor(card.attack * bonusMultiplier);
+    const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
 
     if (mode === "multiplayer" && roomId) {
       socket.emit("attack", { roomId, attackerId: socket.id, damage });
     }
+  };
+
+  const handlePlayAgain = () => {
+    setGameOver(false);
+    setMessage("");
+    setPlayerHP(100);
+    setEnemyHP(100);
+    setGameStarted(false);
+    setTurn(null);
+
+    socket.emit("request-play-again", roomId);
   };
 
   const handleExitRoom = () => {
@@ -171,28 +174,18 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
       </div>
 
       {!gameStarted && players[playerId] && players[enemyId] && (
-        <button
-          onClick={() => socket.emit("player-ready", roomId)}
-          className={`bg-yellow-500 text-white p-3 rounded ${
-            players[playerId]?.ready ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-          disabled={players[playerId]?.ready}
-        >
+        <button onClick={handleReady} className="bg-yellow-500 text-white p-3 rounded">
           {players[playerId]?.ready ? "✅ I'm Ready" : "✔ Ready"}
         </button>
       )}
 
-      {gameStarted &&
-        !gameOver &&
+      {gameStarted && !gameOver &&
         playerCards.map((card, index) => (
-          <button
-            key={index}
-            onClick={() => handlePlayerAttack(card)}
+          <button key={index} onClick={() => handlePlayerAttack(card)} 
             className={`bg-red-500 text-white p-2 rounded ${
               turn !== playerId ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            disabled={turn !== playerId}
-          >
+            }`} 
+            disabled={turn !== playerId}>
             Attack with {card.name}
           </button>
         ))}
@@ -203,33 +196,11 @@ const GameBoard = ({ playerCards, mode, roomId, updateLeaderboard, onExit }) => 
       {gameOver && (
         <div className="mt-4 text-center">
           <h3 className="text-xl font-bold">🏆 Scoreboard</h3>
-          <p>
-            {players[playerId]?.name || "You"}: Wins: {scoreboard.current[playerId]?.wins || 0}, Losses: {scoreboard.current[playerId]?.losses || 0}
-          </p>
-          <p>
-            {players[enemyId]?.name || "Opponent"}: Wins: {scoreboard.current[enemyId]?.wins || 0}, Losses: {scoreboard.current[enemyId]?.losses || 0}
-          </p>
+          <p>{players[playerId]?.name || "You"}: Wins: {scoreboard[playerId]?.wins || 0}, Losses: {scoreboard[playerId]?.losses || 0}</p>
+          <p>{players[enemyId]?.name || "Opponent"}: Wins: {scoreboard[enemyId]?.wins || 0}, Losses: {scoreboard[enemyId]?.losses || 0}</p>
 
-          <button
-            onClick={() => {
-              setGameOver(false);
-              setMessage("");
-              setPlayerHP(100);
-              setEnemyHP(100);
-              setGameStarted(false);
-              setTurn(null);
-              socket.emit("request-play-again", roomId);
-            }}
-            className="bg-blue-500 text-white p-2 rounded"
-          >
-            Play Again?
-          </button>
-          <button
-            onClick={handleExitRoom}
-            className="bg-red-500 text-white p-2 rounded ml-2"
-          >
-            Exit Room
-          </button>
+          <button onClick={handlePlayAgain} className="bg-blue-500 text-white p-2 rounded">Play Again?</button>
+          <button onClick={handleExitRoom} className="bg-red-500 text-white p-2 rounded ml-2">Exit Room</button>
         </div>
       )}
     </div>

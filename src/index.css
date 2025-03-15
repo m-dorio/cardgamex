@@ -88,6 +88,10 @@ section.game-container {
   border-radius: 10px;
   border: #213547 solid 1px;
 }
+.leaderboard ul {
+ 
+}
+
 .gamemodeselector {
   display: flex;
   flex-direction: column;
