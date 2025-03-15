@@ -18,7 +18,7 @@ const CardCreator = ({ addCustomCard }) => {
   };
 
   return (
-    <div className="p-4 border bg-gray-100">
+    <div className="custom-card p-4 border bg-gray-100">
       <h2>Create Your Custom Card</h2>
       <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Card Name" />
       <input type="number" value={attack} onChange={(e) => setAttack(e.target.value)} placeholder="Attack Power" />
