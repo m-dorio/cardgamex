@@ -46,23 +46,33 @@ const App = () => {
     }
   };
 
-  const updateLeaderboard = (result) => {
-    const scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
-    const existingPlayer = scores.find((p) => p.name === playerName);
+ const updateLeaderboard = (playerName, result) => {
+  if (!playerName) {
+    console.warn("Player name is missing. Cannot update leaderboard.");
+    return;
+  }
 
-    if (existingPlayer) {
-      existingPlayer[result]++;
-    } else {
-      scores.push({
-        name: playerName,
-        wins: result === "wins" ? 1 : 0,
-        losses: result === "losses" ? 1 : 0,
-      });
-    }
+  const scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
+  let player = scores.find((p) => p.name === playerName);
 
-    localStorage.setItem("leaderboard", JSON.stringify(scores));
-    setLeaderboard(scores);
-  };
+  if (player) {
+    // Ensure `wins` and `losses` are numbers before updating
+    player.wins = player.wins || 0;
+    player.losses = player.losses || 0;
+    player[result] += 1;  // Safely increment 'wins' or 'losses'
+  } else {
+    // Add a new player record with default values
+    scores.push({
+      name: playerName,
+      wins: result === "wins" ? 1 : 0,
+      losses: result === "losses" ? 1 : 0,
+    });
+  }
+
+  localStorage.setItem("leaderboard", JSON.stringify(scores));
+  setLeaderboard(scores);
+};
+
 
   const createRoom = () => {
     if (!playerName.trim()) {

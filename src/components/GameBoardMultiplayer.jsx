@@ -1,9 +1,17 @@
 import { useState, useEffect } from "react";
 import socket from "../socket";
+import Gravatar from "./Gravatar";
 
-const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }) => {
+const GameBoardMultiplayer = ({
+  playerCards,
+  roomId,
+  updateLeaderboard,
+  onExit,
+}) => {
   const [playerHP, setPlayerHP] = useState(100);
+  const [playerDamage, setPlayerDamage] = useState(0);
   const [enemyHP, setEnemyHP] = useState(100);
+  const [enemyDamage, setEnemyDamage] = useState(0);
   const [turn, setTurn] = useState(null);
   const [message, setMessage] = useState("");
   const [players, setPlayers] = useState({});
@@ -14,7 +22,7 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
   const [scoreboard, setScoreboard] = useState({});
   const [rollingDice, setRollingDice] = useState(false);
   const [diceResult, setDiceResult] = useState(null);
-
+  const [damage, setDamage] = useState(0);
   useEffect(() => {
     socket.on("update-players", (playersData) => {
       setPlayers(playersData);
@@ -41,7 +49,11 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
       setTimeout(() => {
         setTurn(turn);
         setGameStarted(true);
-        setMessage(`🎲 You (${diceRolls[playerId] || "?"}) vs Opponent (${diceRolls[enemyId] || "?"})`);
+        setMessage(
+          `🎲 You (${diceRolls[playerId] || "?"}) vs Opponent (${
+            diceRolls[enemyId] || "?"
+          })`
+        );
       }, 2000);
     });
 
@@ -67,7 +79,11 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
           setMessage("💀 You lost! Game Over.");
           setGameOver(true);
           updateLeaderboard("losses");
-          socket.emit("game-over", { roomId, winnerId: enemyId, loserId: playerId });
+          socket.emit("game-over", {
+            roomId,
+            winnerId: enemyId,
+            loserId: playerId,
+          });
         }
         return newHP;
       });
@@ -80,7 +96,11 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
           setMessage("🎉 You Won! Game Over.");
           setGameOver(true);
           updateLeaderboard("wins");
-          socket.emit("game-over", { roomId, winnerId: playerId, loserId: enemyId });
+          socket.emit("game-over", {
+            roomId,
+            winnerId: playerId,
+            loserId: enemyId,
+          });
         }
         return newHP;
       });
@@ -98,28 +118,35 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
     if (rollingDice || gameOver) return;
     setRollingDice(true);
     setMessage("🎲 Rolling the dice...");
-    
+
     setTimeout(() => {
       const diceRoll = Math.floor(Math.random() * 6) + 1;
       setDiceResult(diceRoll);
       setRollingDice(false);
-      
+
       if (diceRoll >= 4) {
-        setMessage(`🎲 You rolled a ${diceRoll}! You can attack again.`);
+        setMessage(`🎲 You rolled a ${diceRoll}!`);
       } else {
-        setMessage(`🎲 You rolled a ${diceRoll}. Your turn is over.`);
+        setMessage(`🎲 You rolled a ${diceRoll}.`);
         socket.emit("set-turn", enemyId);
       }
     }, 2000);
   };
 
   const handlePlayerAttack = (card) => {
-    if (gameOver || turn !== playerId || rollingDice) return;
-
-    const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
-    socket.emit("attack", { roomId, attackerId: socket.id, damage });
-
-    setTimeout(handleRollDice, 1000);
+    if (players[playerId]) {
+      if (gameOver || turn !== playerId || rollingDice) return;
+      const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
+      socket.emit("attack", { roomId, attackerId: socket.id, damage });
+      setPlayerDamage(damage + diceResult);
+      // setTimeout(handleRollDice, 1000);
+    } else if (players[enemyId]) {
+      if (gameOver || turn !== playerId || rollingDice) return;
+      const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
+      socket.emit("attack", { roomId, attackerId: socket.id, damage });
+      setEnemyDamage(damage + diceResult);
+      // setTimeout(handleRollDice, 1000);
+    }
   };
 
   const handlePlayAgain = () => {
@@ -138,18 +165,30 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
   };
 
   return (
-     <div className="p-4 border bg-gray-200">
+    <div className="p-4 border bg-gray-200">
       <div className="roominfo">
         <h2 className="text-2xl font-bold">⚔ Battle Arena Phase ⚔</h2>
         <span className="text-xl font-bold">Room ID: {roomId}</span>
       </div>
       <div className="flex justify-between">
-        <div className="player text-center">
-          <h3>🔥 {players[playerId]?.name || "You"}</h3>
-          <span>HP: {playerHP}</span>
+        <div className="player">
+          <div className="profile">
+            <Gravatar
+            email="michaelangelo.dorio@gmail.com"
+            size={100}
+            fallback="./src/assets/images/avatar_1.png"
+          />
+          <h4>🔥 {players[playerId]?.name || "You"}</h4>
+          </div>
+
+          <div className="attributes">
+            <span className="phealth">HP: {playerHP}</span>
+            <span className="pdamage">
+              -{enemyDamage}HP + {diceResult} dmg
+            </span>
+          </div>
         </div>
         <div className="phase">
-          <p className="">
             <span>Status:</span>
             {!gameStarted
               ? players[playerId]?.ready
@@ -160,11 +199,22 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
               : turn === playerId
               ? "🔥 Your Turn! Choose an attack."
               : "⏳ Waiting for opponent's attack..."}
-          </p>
         </div>
-        <div className="opponent text-center">
-          <h3>👹 {players[enemyId]?.name || "Waiting for opponent..."}</h3>
-          <span>HP: {enemyHP}</span>
+        <div className="opponent">
+          <div className="profile">
+             <Gravatar
+            email="michaelangelo.doxrio@gmail.comx"
+            size={50}
+            fallback="./src/assets/images/avatar_1.png"
+          />
+          <h4>👹 {players[enemyId]?.name || "Waiting for opponent..."}</h4>
+         </div>
+          <div className="attributes">
+             <span className="ophealth">HP: {enemyHP}</span>
+          <span className="opdamage">
+            -{playerDamage}HP + {diceResult} dmg
+          </span>
+         </div>
         </div>
       </div>
 
@@ -194,7 +244,11 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
                 margin: "8px",
               }}
               disabled={gameOver || turn !== playerId || rollingDice}
-                className={`p-3 rounded ${gameOver || turn !== playerId || rollingDice ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'}`}
+              className={`p-3 rounded ${
+                gameOver || turn !== playerId || rollingDice
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-green-500 text-white"
+              }`}
             >
               Use {card.name} ⚔
             </button>
@@ -203,7 +257,7 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
 
       {message && <p className="my-4 text-md">{message}</p>}
 
-      {!gameOver && (
+      {gameStarted && !gameOver && (
         <button
           onClick={handleRollDice}
           disabled={rollingDice || gameOver || turn !== playerId}
