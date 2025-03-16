@@ -35,6 +35,7 @@ const App = () => {
 const updateLeaderboard = (result) => {
   let scores = JSON.parse(localStorage.getItem("leaderboard"));
 
+<<<<<<< HEAD
   // ✅ Ensure scores is always an array
   if (!Array.isArray(scores)) {
     console.error("⚠ leaderboard is corrupted! Resetting...");
@@ -56,6 +57,17 @@ const updateLeaderboard = (result) => {
   localStorage.setItem("leaderboard", JSON.stringify(scores));
   // setLeaderboard([...scores]);
 };
+=======
+    if (existingPlayer) {
+      existingPlayer[result]++;
+    } else {
+      scores.push({
+        name: playerName,
+        wins: result === "wins" ? 1 : 0,
+        losses: result === "losses" ? 1 : 0,
+      });
+    }
+>>>>>>> bb73d670d9c3c43d0c28b3fe0fa2cff4b8cefcce
 
 
   const createRoom = () => {
