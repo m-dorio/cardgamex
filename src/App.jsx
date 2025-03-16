@@ -18,13 +18,7 @@ const App = () => {
   ]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [players, setPlayers] = useState({});
-
-  const applyAttackBonus = (cards) => {
-    return cards.map((card) => ({
-      ...card,
-      attack: Math.floor(card.attack * (1 + Math.random() * 0.5)), // ✅ 1.0x to 1.5x multiplier
-    }));
-  };
+  const [scores, setScores] = useState({});
 
   useEffect(() => {
     const storedScores = JSON.parse(localStorage.getItem("leaderboard")) || [];
@@ -38,23 +32,31 @@ const App = () => {
     }
   };
 
-  const updateLeaderboard = (result) => {
-    const scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
-    const existingPlayer = scores.find((p) => p.name === playerName);
+const updateLeaderboard = (result) => {
+  let scores = JSON.parse(localStorage.getItem("leaderboard"));
 
-    if (existingPlayer) {
-      existingPlayer[result] += 1;
-    } else {
-      scores.push({
-        name: playerName,
-        wins: result === "wins" ? 1 : 0,
-        losses: result === "losses" ? 1 : 0,
-      });
-    }
+  // ✅ Ensure scores is always an array
+  if (!Array.isArray(scores)) {
+    console.error("⚠ leaderboard is corrupted! Resetting...");
+    scores = [];
+  }
 
-    localStorage.setItem("leaderboard", JSON.stringify(scores));
-    setLeaderboard(scores);
-  };
+  const existingPlayer = scores.find((p) => p.name === playerName);
+
+  if (existingPlayer) {
+    existingPlayer[result] = (existingPlayer[result] || 0) + 1;
+  } else {
+    scores.push({
+      name: playerName,
+      wins: result === "wins" ? 1 : 0,
+      losses: result === "losses" ? 1 : 0,
+    });
+  }
+
+  localStorage.setItem("leaderboard", JSON.stringify(scores));
+  // setLeaderboard([...scores]);
+};
+
 
   const createRoom = () => {
     if (!playerName.trim()) {
@@ -69,39 +71,33 @@ const App = () => {
       image: playerImage || "/default-avatar.png",
     });
 
-    setPlayerCards(applyAttackBonus(playerCards));
     setGameStarted(true);
   };
 
   useEffect(() => {
-  socket.on("update-scores", (scores) => {
-    setPlayers((prevPlayers) => ({
-      ...prevPlayers,
-      scores, // ✅ Update scores from server
-    }));
-  });
-
-  return () => {
-    socket.off("update-scores");
-  };
-}, []);
-
-  useEffect(() => {
-    const handleRoomCreated = (roomId) => {
-      setRoomId(roomId);
-      setGameStarted(true);
-    };
-
-    const handleUpdatePlayers = (playersData) => {
-      setPlayers(playersData);
-    };
-
-    socket.on("room-created", handleRoomCreated);
-    socket.on("update-players", handleUpdatePlayers);
+    socket.on("update-scores", (updatedScores) => {
+      setScores(updatedScores);
+      localStorage.setItem("leaderboard", JSON.stringify(updatedScores));
+    });
 
     return () => {
-      socket.off("room-created", handleRoomCreated);
-      socket.off("update-players", handleUpdatePlayers);
+      socket.off("update-scores");
+    };
+  }, []);
+
+  useEffect(() => {
+    socket.on("update-players", (playersData) => {
+      setPlayers(playersData);
+    });
+
+    socket.on("room-created", (roomId) => {
+      setRoomId(roomId);
+      setGameStarted(true);
+    });
+
+    return () => {
+      socket.off("update-players");
+      socket.off("room-created");
     };
   }, []);
 
@@ -119,6 +115,17 @@ const App = () => {
     setGameStarted(true);
   };
 
+  const handleExit = () => {
+    socket.emit("leave-room", roomId);
+    setGameStarted(false);
+    setMode(null);
+    setRoomId("");
+
+    // Force leaderboard refresh
+    const storedScores = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    setLeaderboard(storedScores);
+  };
+
   return (
     <main className="game-section">
       <section className="game-container">
@@ -130,19 +137,31 @@ const App = () => {
             mode={mode}
             playerCards={playerCards}
             updateLeaderboard={updateLeaderboard}
+            onExit={() => {
+              setGameStarted(false);
+              setMode(null);
+              setRoomId("");
+            }}
           />
         ) : !mode ? (
           <GameModeSelector onSelectMode={handleSelectMode} />
         ) : (
           <div>
             <h2>🏆 Leaderboard</h2>
-            <ul>
-              {leaderboard.map((player, index) => (
-                <li key={index}>
-                  {player.name} - Wins: {player.wins} | Losses: {player.losses}
-                </li>
-              ))}
-            </ul>
+            <div className="leaderboard">
+              <ol>
+                {Array.isArray(leaderboard) &&
+                  leaderboard
+                    .slice() // Create a shallow copy of the array
+                    .reverse() // Reverse the array copy
+                    .map((player, index) => (
+                      <li key={index}>
+                        {player.name} - Wins: {player.wins} | Losses:{" "}
+                        {player.losses}
+                      </li>
+                    ))}
+              </ol>
+            </div>
 
             {mode === "bot" && (
               <div>
@@ -153,7 +172,9 @@ const App = () => {
                   onChange={(e) => setPlayerName(e.target.value)}
                   required
                 />
-                <button onClick={() => setGameStarted(true)}>Start AI Battle</button>
+                <button onClick={() => setGameStarted(true)}>
+                  Start AI Battle
+                </button>
               </div>
             )}
 
@@ -173,7 +194,10 @@ const App = () => {
                   onChange={(e) => setPlayerImage(e.target.value)}
                 />
 
-                <button onClick={createRoom} className="bg-green-500 text-white p-3 rounded-lg">
+                <button
+                  onClick={createRoom}
+                  className="bg-green-500 text-white p-3 rounded-lg"
+                >
                   Create New Room
                 </button>
 
@@ -184,7 +208,10 @@ const App = () => {
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
                   />
-                  <button onClick={joinGame} className="bg-blue-500 text-white p-3 rounded-lg">
+                  <button
+                    onClick={joinGame}
+                    className="bg-blue-500 text-white p-3 rounded-lg"
+                  >
                     Join Room
                   </button>
                 </div>
@@ -193,7 +220,9 @@ const App = () => {
           </div>
         )}
 
-        <CardCreator addCustomCard={(card) => setPlayerCards([...playerCards, card])} />
+        <CardCreator
+          addCustomCard={(card) => setPlayerCards([...playerCards, card])}
+        />
       </section>
     </main>
   );
