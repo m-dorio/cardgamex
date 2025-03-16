@@ -9,8 +9,10 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   const [playerDice, setPlayerDice] = useState(null);
   const [enemyDice, setEnemyDice] = useState(null);
   const [aiSelectedCard, setAiSelectedCard] = useState(null);
+  const [isRollingDice, setIsRollingDice] = useState(false);
 
   const rollDice = () => {
+    setIsRollingDice(true); // Set dice rolling to true
     console.log("Rolling dice...");
     const playerRoll = Math.floor(Math.random() * 6) + 1;
     const enemyRoll = Math.floor(Math.random() * 6) + 1;
@@ -20,29 +22,25 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
 
     if (playerRoll > enemyRoll) {
       setMessage("🎉 You won the roll! Your turn to attack.");
-      console.log("Player won the roll!");
       setTimeout(() => {
         setTurn("player");
-        console.log("Turn is now Player.");
+        setIsRollingDice(false); // Set dice rolling to false after processing roll
       }, 0);
     } else if (enemyRoll > playerRoll) {
       setMessage("🤖 AI won the roll! AI is preparing to attack...");
-      console.log("AI won the roll!");
       setTimeout(() => {
         setTurn("enemy");
-        console.log("Turn is now Enemy.");
+        setIsRollingDice(false); // Set dice rolling to false after processing roll
       }, 0);
     } else {
       setMessage("🎲 It's a tie! Rolling again...");
-      console.log("It's a tie, re-rolling...");
       setTimeout(rollDice, 1500);
     }
   };
 
   useEffect(() => {
     if (!gameOver && turn === null) {
-      console.log("Starting the game...");
-      rollDice(); // Start the game if not over and turn is not yet set
+      rollDice();
     }
   }, [gameOver, turn]);
 
@@ -54,26 +52,26 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   }, [turn, gameOver]); // Combine both dependencies into a single useEffect
 
   const handleAttack = (card) => {
-    if (gameOver || turn !== "player") return; // Only allow if it's the player's turn
+    if (gameOver || turn !== "player") return;
 
-    setMessage(`Player is attacking with ${card.name}`); // Update message correctly
+    // setMessage(`Player is attacking with ${card.name}`);
 
-    const damage = Math.floor(card.attack * (1 + Math.random() * 0.5)); // Calculate damage
+    const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
+
     setEnemyHP((prev) => {
-      const newHP = Math.max(0, prev - damage); // Subtract damage from enemy HP
+      const newHP = Math.max(0, prev - damage);
 
       if (newHP === 0) {
-        setGameOver(true); // Game over if enemy HP is 0
-        setMessage("🎉 You Won! Game Over."); // Player wins
+        setGameOver(true);
+        setMessage("🎉 You Won! Game Over.");
         updateLeaderboard("wins");
       } else {
         setTimeout(() => {
-          console.log("AI's turn after player attack.");
-
-          setTurn("enemy"); // Switch turn to enemy after attack
+          setTurn("enemy");
           setMessage("🤖 AI is preparing to attack...");
-        }, 1500);
+        }, 0);
       }
+
       return newHP;
     });
   };
@@ -125,7 +123,7 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   };
 
   return (
-    <div
+     <div
       style={{
         padding: "16px",
         border: "1px solid #ccc",
@@ -177,13 +175,13 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
                   : "#333", // gray-500
               color: "white",
               cursor:
-                turn !== "player" || gameOver || playerHP === 0 || enemyHP === 0
+                turn !== "player" || gameOver || playerHP === 0 || enemyHP === 0 || isRollingDice
                   ? "not-allowed"
                   : "pointer",
               margin: "8px",
             }}
             disabled={
-              turn !== "player" || gameOver || playerHP === 0 || enemyHP === 0
+              turn !== "player" || gameOver || playerHP === 0 || enemyHP === 0 || isRollingDice
             }
           >
             Attack with {card.name}
