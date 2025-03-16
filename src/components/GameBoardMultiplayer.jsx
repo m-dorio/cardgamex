@@ -8,6 +8,9 @@ const GameBoardMultiplayer = ({
   updateLeaderboard,
   onExit,
 }) => {
+    const [playerImage, setPlayerImage] = useState(
+    "./src/assets/images/avatar_1.png"
+  );
   const [playerHP, setPlayerHP] = useState(100);
   const [playerDamage, setPlayerDamage] = useState(0);
   const [enemyHP, setEnemyHP] = useState(100);
@@ -203,7 +206,7 @@ const GameBoardMultiplayer = ({
         <div className="opponent">
           <div className="profile">
              <Gravatar
-            email="michaelangelo.doxrio@gmail.comx"
+            email={playerImage}
             size={50}
             fallback="./src/assets/images/avatar_1.png"
           />

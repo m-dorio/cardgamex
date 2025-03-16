@@ -4,11 +4,15 @@ import socket from "./socket";
 import GameBoard from "./components/GameBoard";
 import CardCreator from "./components/CardCreator";
 import GameModeSelector from "./components/GameModeSelector";
+import Gravatar from "./components/Gravatar";
 
 const App = () => {
   const [roomId, setRoomId] = useState("");
   const [playerName, setPlayerName] = useState("");
-  const [playerImage, setPlayerImage] = useState("");
+  const [playerImage, setPlayerImage] = useState(
+    "./src/assets/images/avatar_1.png"
+  );
+   const [inputValue, setInputValue] = useState(""); 
   const [mode, setMode] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [playerCards, setPlayerCards] = useState([
@@ -46,33 +50,32 @@ const App = () => {
     }
   };
 
- const updateLeaderboard = (playerName, result) => {
-  if (!playerName) {
-    console.warn("Player name is missing. Cannot update leaderboard.");
-    return;
-  }
+  const updateLeaderboard = (playerName, result) => {
+    if (!playerName) {
+      console.warn("Player name is missing. Cannot update leaderboard.");
+      return;
+    }
 
-  const scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
-  let player = scores.find((p) => p.name === playerName);
+    const scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    let player = scores.find((p) => p.name === playerName);
 
-  if (player) {
-    // Ensure `wins` and `losses` are numbers before updating
-    player.wins = player.wins || 0;
-    player.losses = player.losses || 0;
-    player[result] += 1;  // Safely increment 'wins' or 'losses'
-  } else {
-    // Add a new player record with default values
-    scores.push({
-      name: playerName,
-      wins: result === "wins" ? 1 : 0,
-      losses: result === "losses" ? 1 : 0,
-    });
-  }
+    if (player) {
+      // Ensure `wins` and `losses` are numbers before updating
+      player.wins = player.wins || 0;
+      player.losses = player.losses || 0;
+      player[result] += 1; // Safely increment 'wins' or 'losses'
+    } else {
+      // Add a new player record with default values
+      scores.push({
+        name: playerName,
+        wins: result === "wins" ? 1 : 0,
+        losses: result === "losses" ? 1 : 0,
+      });
+    }
 
-  localStorage.setItem("leaderboard", JSON.stringify(scores));
-  setLeaderboard(scores);
-};
-
+    localStorage.setItem("leaderboard", JSON.stringify(scores));
+    setLeaderboard(scores);
+  };
 
   const createRoom = () => {
     if (!playerName.trim()) {
@@ -142,6 +145,10 @@ const App = () => {
     setLeaderboard(storedScores);
   };
 
+  const handleSetAvatar = () => {
+    setPlayerImage(inputValue.trim() || "./src/assets/images/avatar_1.png"); // Use default if empty
+  };
+
   return (
     <main className="game-section">
       <section className="game-container">
@@ -208,16 +215,24 @@ const App = () => {
               <div className="lobbycontainer">
                 <input
                   type="text"
-                  placeholder="Enter Your Name"
+                  placeholder="Enter Your Name or Nickname"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   required
                 />
+
                 <input
                   type="text"
-                  placeholder="Image URL (Optional)"
-                  value={playerImage}
-                  onChange={(e) => setPlayerImage(e.target.value)}
+                  placeholder="Image URL or Gravatar (Optional)"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                />
+                
+                <button onClick={handleSetAvatar}>Set Avatar</button>
+                <Gravatar
+                  email={playerImage}
+                  size={50}
+                  fallback="./src/assets/images/avatar_1.png"
                 />
               </div>
 
