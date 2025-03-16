@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import socket from "../socket";
 
-const GameBoardMultiplayer = ({
-  playerCards,
-  roomId,
-  updateLeaderboard,
-  onExit,
-}) => {
+const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }) => {
   const [playerHP, setPlayerHP] = useState(100);
   const [enemyHP, setEnemyHP] = useState(100);
   const [turn, setTurn] = useState(null);
@@ -24,21 +19,14 @@ const GameBoardMultiplayer = ({
     socket.on("update-players", (playersData) => {
       setPlayers(playersData);
       setPlayerId(socket.id);
-
       const ids = Object.keys(playersData);
       if (ids.length === 2) {
-        const enemy = ids.find((id) => id !== socket.id);
-        setEnemyId(enemy);
+        setEnemyId(ids.find((id) => id !== socket.id));
       }
     });
 
-    socket.on("player-ready-update", (updatedPlayers) => {
-      setPlayers(updatedPlayers);
-    });
-
-    socket.on("update-scores", (scores) => {
-      setScoreboard(scores);
-    });
+    socket.on("player-ready-update", setPlayers);
+    socket.on("update-scores", setScoreboard);
 
     return () => {
       socket.off("update-players");
@@ -53,17 +41,11 @@ const GameBoardMultiplayer = ({
       setTimeout(() => {
         setTurn(turn);
         setGameStarted(true);
-        setMessage(
-          `🎲 You (${diceRolls[playerId] || "?"}) vs Opponent (${
-            diceRolls[enemyId] || "?"
-          })`
-        );
+        setMessage(`🎲 You (${diceRolls[playerId] || "?"}) vs Opponent (${diceRolls[enemyId] || "?"})`);
       }, 2000);
     });
 
-    return () => {
-      socket.off("dice-roll-result");
-    };
+    return () => socket.off("dice-roll-result");
   }, [roomId, playerId, enemyId]);
 
   useEffect(() => {
@@ -74,9 +56,7 @@ const GameBoardMultiplayer = ({
       }
     });
 
-    return () => {
-      socket.off("set-turn");
-    };
+    return () => socket.off("set-turn");
   }, [roomId, gameOver]);
 
   useEffect(() => {
@@ -84,14 +64,10 @@ const GameBoardMultiplayer = ({
       setPlayerHP((prevHP) => {
         const newHP = Math.max(0, prevHP - damage);
         if (newHP === 0) {
+          setMessage("💀 You lost! Game Over.");
           setGameOver(true);
           updateLeaderboard("losses");
-          socket.emit("game-over", {
-            roomId,
-            winnerId: enemyId,
-            loserId: playerId,
-          });
-          setMessage("💀 You lost! Game Over.");
+          socket.emit("game-over", { roomId, winnerId: enemyId, loserId: playerId });
         }
         return newHP;
       });
@@ -101,14 +77,10 @@ const GameBoardMultiplayer = ({
       setEnemyHP((prevHP) => {
         const newHP = Math.max(0, prevHP - damage);
         if (newHP === 0) {
+          setMessage("🎉 You Won! Game Over.");
           setGameOver(true);
           updateLeaderboard("wins");
-          socket.emit("game-over", {
-            roomId,
-            winnerId: playerId,
-            loserId: enemyId,
-          });
-          setMessage("🎉 You Won! Game Over.");
+          socket.emit("game-over", { roomId, winnerId: playerId, loserId: enemyId });
         }
         return newHP;
       });
@@ -120,26 +92,23 @@ const GameBoardMultiplayer = ({
     };
   }, [roomId, playerId, enemyId]);
 
-  const handleReady = () => {
-    socket.emit("player-ready", roomId);
-  };
+  const handleReady = () => socket.emit("player-ready", roomId);
 
   const handleRollDice = () => {
     if (rollingDice || gameOver) return;
-
     setRollingDice(true);
     setMessage("🎲 Rolling the dice...");
-
+    
     setTimeout(() => {
-      const diceRoll = Math.floor(Math.random() * 6) + 1; // Roll a 6-sided die
+      const diceRoll = Math.floor(Math.random() * 6) + 1;
       setDiceResult(diceRoll);
       setRollingDice(false);
-
+      
       if (diceRoll >= 4) {
         setMessage(`🎲 You rolled a ${diceRoll}! You can attack again.`);
       } else {
         setMessage(`🎲 You rolled a ${diceRoll}. Your turn is over.`);
-        socket.emit("set-turn", enemyId); // Switch turn to opponent
+        socket.emit("set-turn", enemyId);
       }
     }, 2000);
   };
@@ -150,9 +119,7 @@ const GameBoardMultiplayer = ({
     const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
     socket.emit("attack", { roomId, attackerId: socket.id, damage });
 
-    setTimeout(() => {
-      handleRollDice();
-    }, 1000);
+    setTimeout(handleRollDice, 1000);
   };
 
   const handlePlayAgain = () => {
@@ -162,7 +129,6 @@ const GameBoardMultiplayer = ({
     setEnemyHP(100);
     setGameStarted(false);
     setTurn(null);
-
     socket.emit("request-play-again", roomId);
   };
 
@@ -172,7 +138,7 @@ const GameBoardMultiplayer = ({
   };
 
   return (
-    <div className="p-4 border bg-gray-200">
+     <div className="p-4 border bg-gray-200">
       <div className="roominfo">
         <h2 className="text-2xl font-bold">⚔ Battle Arena Phase ⚔</h2>
         <span className="text-xl font-bold">Room ID: {roomId}</span>
@@ -227,7 +193,8 @@ const GameBoardMultiplayer = ({
                   turn !== playerId || gameOver ? "not-allowed" : "pointer",
                 margin: "8px",
               }}
-              disabled={turn !== playerId}
+              disabled={gameOver || turn !== playerId || rollingDice}
+                className={`p-3 rounded ${gameOver || turn !== playerId || rollingDice ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'}`}
             >
               Use {card.name} ⚔
             </button>
@@ -235,6 +202,20 @@ const GameBoardMultiplayer = ({
       </div>
 
       {message && <p className="my-4 text-md">{message}</p>}
+
+      {!gameOver && (
+        <button
+          onClick={handleRollDice}
+          disabled={rollingDice || gameOver || turn !== playerId}
+          className={`p-3 rounded ${
+            rollingDice || gameOver || turn !== playerId
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-500 text-white"
+          }`}
+        >
+          Roll Dice
+        </button>
+      )}
 
       {gameOver && (
         <div className="mt-4 text-center">
