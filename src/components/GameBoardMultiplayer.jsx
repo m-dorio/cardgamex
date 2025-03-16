@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import socket from "../socket";
 
-const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }) => {
+const GameBoardMultiplayer = ({
+  playerCards,
+  roomId,
+  updateLeaderboard,
+  onExit,
+}) => {
   const [playerHP, setPlayerHP] = useState(100);
   const [enemyHP, setEnemyHP] = useState(100);
   const [turn, setTurn] = useState(null);
@@ -12,6 +17,8 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [scoreboard, setScoreboard] = useState({});
+  const [rollingDice, setRollingDice] = useState(false);
+  const [diceResult, setDiceResult] = useState(null);
 
   useEffect(() => {
     socket.on("update-players", (playersData) => {
@@ -46,7 +53,11 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
       setTimeout(() => {
         setTurn(turn);
         setGameStarted(true);
-        setMessage(`🎲 You (${diceRolls[playerId] || "?"}) vs Opponent (${diceRolls[enemyId] || "?"})`);
+        setMessage(
+          `🎲 You (${diceRolls[playerId] || "?"}) vs Opponent (${
+            diceRolls[enemyId] || "?"
+          })`
+        );
       }, 2000);
     });
 
@@ -75,7 +86,11 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
         if (newHP === 0) {
           setGameOver(true);
           updateLeaderboard("losses");
-          socket.emit("game-over", { roomId, winnerId: enemyId, loserId: playerId });
+          socket.emit("game-over", {
+            roomId,
+            winnerId: enemyId,
+            loserId: playerId,
+          });
           setMessage("💀 You lost! Game Over.");
         }
         return newHP;
@@ -88,7 +103,11 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
         if (newHP === 0) {
           setGameOver(true);
           updateLeaderboard("wins");
-          socket.emit("game-over", { roomId, winnerId: playerId, loserId: enemyId });
+          socket.emit("game-over", {
+            roomId,
+            winnerId: playerId,
+            loserId: enemyId,
+          });
           setMessage("🎉 You Won! Game Over.");
         }
         return newHP;
@@ -105,12 +124,35 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
     socket.emit("player-ready", roomId);
   };
 
+  const handleRollDice = () => {
+    if (rollingDice || gameOver) return;
+
+    setRollingDice(true);
+    setMessage("🎲 Rolling the dice...");
+
+    setTimeout(() => {
+      const diceRoll = Math.floor(Math.random() * 6) + 1; // Roll a 6-sided die
+      setDiceResult(diceRoll);
+      setRollingDice(false);
+
+      if (diceRoll >= 4) {
+        setMessage(`🎲 You rolled a ${diceRoll}! You can attack again.`);
+      } else {
+        setMessage(`🎲 You rolled a ${diceRoll}. Your turn is over.`);
+        socket.emit("set-turn", enemyId); // Switch turn to opponent
+      }
+    }, 2000);
+  };
+
   const handlePlayerAttack = (card) => {
-    if (gameOver || turn !== playerId) return;
+    if (gameOver || turn !== playerId || rollingDice) return;
 
     const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
-
     socket.emit("attack", { roomId, attackerId: socket.id, damage });
+
+    setTimeout(() => {
+      handleRollDice();
+    }, 1000);
   };
 
   const handlePlayAgain = () => {
@@ -141,7 +183,7 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
           <span>HP: {playerHP}</span>
         </div>
         <div className="phase">
-          <p className="my-4 text-lg font-bold">
+          <p className="">
             <span>Status:</span>
             {!gameStarted
               ? players[playerId]?.ready
@@ -161,32 +203,78 @@ const GameBoardMultiplayer = ({ playerCards, roomId, updateLeaderboard, onExit }
       </div>
 
       {!gameStarted && players[playerId] && players[enemyId] && (
-        <button onClick={handleReady} className="bg-yellow-500 text-white p-3 rounded">
+        <button
+          onClick={handleReady}
+          className="bg-yellow-500 text-white p-3 rounded"
+        >
           {players[playerId]?.ready ? "✅ I'm Ready" : "✔ Ready"}
         </button>
       )}
 
-      {gameStarted && !gameOver &&
-        playerCards.map((card, index) => (
-          <button key={index} onClick={() => handlePlayerAttack(card)} 
-            className={`bg-red-500 text-white p-2 rounded ${
-              turn !== playerId ? "opacity-50 cursor-not-allowed" : ""
-            }`} 
-            disabled={turn !== playerId}>
-            Attack with {card.name}
-          </button>
-        ))}
+      <div className="atkbuttons">
+        {gameStarted &&
+          !gameOver &&
+          playerCards.map((card, index) => (
+            <button
+              key={index}
+              onClick={() => handlePlayerAttack(card)}
+              style={{
+                padding: "8px",
+                borderRadius: "4px",
+                backgroundColor: turn !== playerId ? "#1a1a1a" : "#3182ce",
+                color: "white",
+                cursor:
+                  turn !== playerId || gameOver ? "not-allowed" : "pointer",
+                margin: "8px",
+              }}
+              disabled={turn !== playerId}
+            >
+              Use {card.name} ⚔
+            </button>
+          ))}
+      </div>
 
       {message && <p className="my-4 text-md">{message}</p>}
 
       {gameOver && (
         <div className="mt-4 text-center">
           <h3 className="text-xl font-bold">🏆 Scoreboard</h3>
-          <p>{players[playerId]?.name || "You"}: Wins: {scoreboard[playerId]?.wins || 0}, Losses: {scoreboard[playerId]?.losses || 0}</p>
-          <p>{players[enemyId]?.name || "Opponent"}: Wins: {scoreboard[enemyId]?.wins || 0}, Losses: {scoreboard[enemyId]?.losses || 0}</p>
+          <p>
+            {players[playerId]?.name || "You"}: Wins:{" "}
+            {scoreboard[playerId]?.wins || 0}, Losses:{" "}
+            {scoreboard[playerId]?.losses || 0}
+          </p>
+          <p>
+            {players[enemyId]?.name || "Opponent"}: Wins:{" "}
+            {scoreboard[enemyId]?.wins || 0}, Losses:{" "}
+            {scoreboard[enemyId]?.losses || 0}
+          </p>
 
-          <button onClick={handlePlayAgain} className="bg-blue-500 text-white p-2 rounded">Play Again?</button>
-          <button onClick={handleExitRoom} className="bg-red-500 text-white p-2 rounded ml-2">Exit Room</button>
+          <div className="endbtn">
+            <button
+              onClick={handlePlayAgain}
+              style={{
+                backgroundColor: "#3182ce",
+                color: "white",
+                padding: "8px",
+                borderRadius: "4px",
+                marginRight: "8px",
+              }}
+            >
+              Play Again?
+            </button>
+            <button
+              onClick={handleExitRoom}
+              style={{
+                backgroundColor: "#044756",
+                color: "white",
+                padding: "8px",
+                borderRadius: "4px",
+              }}
+            >
+              Exit Room
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -51,12 +51,11 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #0b4e75;
   cursor: pointer;
-  transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: #0e73ad;
 }
 button:focus,
 button:focus-visible {
@@ -101,6 +100,19 @@ section.game-container {
   padding-left: 0;
 }
 
+.atkbuttons {
+  margin: 30px auto;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.atkbuttons button {
+  width: 140px;
+  min-height: 50px;
+  height: 60px;
+}
+
 .gameinfo {
   display: flex;
   flex-direction: column;
@@ -124,7 +136,8 @@ section.game-container {
   align-items: center;
   gap: 30px;
   justify-content: center;
-  width: 100%;
+  width: 80%;
+  max-width: 800px;
 }
 
 .topcontainer {
@@ -153,9 +166,15 @@ section.game-container {
   justify-content: center;
   align-items: baseline;
 }
+
+.joinroom {
+  border: #0b4e75 1px solid;
+  padding: 10px 5px;
+  border-radius: 10px;
+  background-color: #062b3f;
+}
 .lobbycontainer,
 .joinroom {
-  width: 50%;
   display: flex;
   gap: 10px;
   flex-direction: column;
@@ -206,27 +225,130 @@ section.game-container {
   align-items: center;
   gap: 10px;
   padding: 10px;
-  border-bottom: #213547 solid 1px;
+  border: 0;
+}
+
+.endbtn {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 30px auto;
 }
 
 .gamemode,
 .joingame,
-.custom-card {
+.custom-card,
+.createroom {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 10px;
 }
 
+.phase {
+  background: rgb(37, 51, 77);
+  display: flex;
+  justify-content: center;
+  border-radius: 10px;
+  width: 100%;
+}
+
+.phase p {
+  width: 100%;
+  padding: 10px;
+  margin: 0;
+}
+
+.container {
+  background: rgb(30, 30, 30);
+  padding: 30px 20px;
+  border-radius: 10px;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    color: #00c7f4;
     background-color: #ffffff;
   }
   a:hover {
-    color: #747bff;
+    color: #74b0ff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #1a1a1a;
+  }
+}
+
+@media (max-width: 575px) {
+  .topcontainer h1 {
+    text-align: center;
+    margin: 20px auto;
+  }
+
+  .gameinfo {
+    gap: 10px;
+  }
+
+  .container {
+    background: rgb(30, 30, 30);
+    padding: 20px 10px;
+    border-radius: 10px;
+  }
+  .container h2 {
+    text-align: center;
+    margin: 20px auto;
+  }
+
+  .stats {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: start;
+  }
+  .player > *,
+  .opponent > * {
+    padding: 0;
+    margin: 0;
+  }
+  .player{
+    display: flex;
+    width: 100%;
+    justify-content: start;
+  }
+  .opponent {
+    display: flex;
+    width: 100%;
+    justify-content: end;
+  }
+
+  .atkbuttons {
+    display: flex;
+    margin: 10px auto;
+  }
+  .atkbuttons button {
+    width: 100%;
+  }
+
+  .topcontainer,
+  .rooms {
+    flex-direction: column;
+    align-items: baseline;
+    width: 100%;
+  }
+  .leaderboard ol {
+    text-align: start;
+    align-items: baseline;
+    width: 100%;
+  }
+  .leaderboard-container > * {
+    display: flex;
+    justify-content: start;
+    text-align: start;
+    width: 100%;
+  }
+  .rooms > * {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
   }
 }

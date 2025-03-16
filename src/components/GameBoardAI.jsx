@@ -123,11 +123,9 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   };
 
   return (
-    <div className="container" 
+    <div
+      className="container"
       style={{
-        padding: "16px",
-        border: "1px solid #ccc",
-        backgroundColor: "#333",
       }}
     >
       {!isNameSet ? (
@@ -156,7 +154,7 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
                 cursor: "pointer",
               }}
             >
-              Start Battle
+              Ready ✔
             </button>
           </form>
         </div>
@@ -168,19 +166,17 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
           <p style={{ margin: "16px 0", fontSize: "16px" }}>{message}</p>
           {!gameOver && aiSelectedCard && (
             <span
-              style={{ textAlign: "center", color: "#e53e3e", fontWeight: "bold" }}
+              style={{
+                textAlign: "center",
+                color: "#e53e3e",
+                fontWeight: "bold",
+              }}
             >
               🤖 AI used {aiSelectedCard}!
             </span>
           )}
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginTop: "16px",
-            }}
-          >
+          <div className="stats" style={{}}>
             <div className="player" style={{ textAlign: "center" }}>
               <h3>🔥 {playerName}</h3>
               <span>HP: {playerHP}</span>
@@ -193,50 +189,54 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
             </div>
           </div>
 
-          {!gameOver &&
-            playerCards.map((card, index) => (
-              <button
-                key={index}
-                onClick={() => handleAttack(card)}
-                style={{
-                  padding: "8px",
-                  borderRadius: "4px",
-                  backgroundColor: turn === "player" ? "#3182ce" : "#333",
-                  color: "white",
-                  cursor: turn !== "player" || gameOver ? "not-allowed" : "pointer",
-                  margin: "8px",
-                }}
-                disabled={turn !== "player" || gameOver}
-              >
-                Attack with {card.name}
-              </button>
-            ))}
-
+          <div className="atkbuttons">
+            {!gameOver &&
+              playerCards.map((card, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleAttack(card)}
+                  style={{
+                    padding: "8px",
+                    borderRadius: "4px",
+                    backgroundColor: turn === "player" ? "#3182ce" : "#1a1a1a",
+                    color: "white",
+                    cursor:
+                      turn !== "player" || gameOver ? "not-allowed" : "pointer",
+                    margin: "8px",
+                  }}
+                  disabled={turn !== "player" || gameOver}
+                >
+                  Use {card.name} ⚔
+                </button>
+              ))}
+          </div>
           {gameOver && (
-            <div style={{ marginTop: "16px", textAlign: "center" }}>
-              <button
-                onClick={handlePlayAgain}
-                style={{
-                  backgroundColor: "#3182ce",
-                  color: "white",
-                  padding: "8px",
-                  borderRadius: "4px",
-                  marginRight: "8px",
-                }}
-              >
-                Play Again?
-              </button>
-              <button
-                onClick={onExit}
-                style={{
-                  backgroundColor: "#e53e3e",
-                  color: "white",
-                  padding: "8px",
-                  borderRadius: "4px",
-                }}
-              >
-                Exit
-              </button>
+            <div className="endbtn">
+              <div style={{ marginTop: "16px", textAlign: "center" }}>
+                <button
+                  onClick={handlePlayAgain}
+                  style={{
+                    backgroundColor: "#3182ce",
+                    color: "white",
+                    padding: "8px",
+                    borderRadius: "4px",
+                    marginRight: "8px",
+                  }}
+                >
+                  Play Again?
+                </button>
+                <button
+                  onClick={onExit}
+                  style={{
+                    backgroundColor: "#044756",
+                    color: "white",
+                    padding: "8px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  Exit
+                </button>
+              </div>
             </div>
           )}
         </>

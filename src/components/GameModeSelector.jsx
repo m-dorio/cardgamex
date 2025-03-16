@@ -39,7 +39,7 @@ const GameModeSelector = ({ onSelectMode }) => {
         }`}
         disabled={!!selectedMode}
       >
-        🌍 Custom Card(Make yours)
+        🌍 Custom Card (Make A Card)
       </button>
     </div>
   );

@@ -137,7 +137,7 @@ const App = () => {
       <section className="game-container">
         <div className="gameinfo">
           <div className="topcontainer">
-            <h3>Card Arena Battle</h3>
+            <h1>Card Arena Battle</h1>
             <span
               className={`text-sm font-bold ${
                 isOnline ? "text-green-500" : "text-red-500"
@@ -186,6 +186,31 @@ const App = () => {
         {mode === "multiplayer" && (
           <div className="customcontainer">
             <div className="rooms">
+              <div className="createroom">
+                <button
+                  onClick={createRoom}
+                  className="bg-green-500 text-white p-3 rounded-lg"
+                >
+                  Create New Room
+                </button>
+              </div>
+
+              <div className="lobbycontainer">
+                <input
+                  type="text"
+                  placeholder="Enter Your Name"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Image URL (Optional)"
+                  value={playerImage}
+                  onChange={(e) => setPlayerImage(e.target.value)}
+                />
+              </div>
+
               <div className="joinroom">
                 <input
                   type="text"
@@ -200,29 +225,6 @@ const App = () => {
                   Join Room
                 </button>
               </div>
-
-              <div className="lobbycontainer">
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Image URL (Optional)"
-                  value={playerImage}
-                  onChange={(e) => setPlayerImage(e.target.value)}
-                />
-
-                <button
-                  onClick={createRoom}
-                  className="bg-green-500 text-white p-3 rounded-lg"
-                >
-                  Create New Room
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -232,7 +234,7 @@ const App = () => {
           />
         )}
 
-        {mode === "bot" && (
+        {!gameStarted && mode === "bot" && (
           <div className="startbtn">
             <button onClick={() => setGameStarted(true)}>
               Start AI Battle 👹
@@ -240,6 +242,18 @@ const App = () => {
           </div>
         )}
       </section>
+      {(gameStarted || mode) && (
+        <button
+          onClick={() => {
+            setGameStarted(false);
+            setMode(null);
+            setRoomId("");
+          }}
+          className="bg-gray-500 text-white p-2 rounded-lg mt-4"
+        >
+          🔙 Back
+        </button>
+      )}
     </main>
   );
 };
