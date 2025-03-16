@@ -19,6 +19,20 @@ const App = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [players, setPlayers] = useState({});
   const [scores, setScores] = useState({});
+  const [isOnline, setIsOnline] = useState(false);
+
+  useEffect(() => {
+    const handleConnect = () => setIsOnline(true);
+    const handleDisconnect = () => setIsOnline(false);
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+    };
+  }, []);
 
   useEffect(() => {
     const storedScores = JSON.parse(localStorage.getItem("leaderboard")) || [];
@@ -121,57 +135,73 @@ const App = () => {
   return (
     <main className="game-section">
       <section className="game-container">
-        <h1>Card Arena Battle</h1>
-
-        {gameStarted ? (
-          <GameBoard
-            roomId={roomId}
-            mode={mode}
-            playerCards={playerCards}
-            updateLeaderboard={updateLeaderboard}
-            onExit={() => {
-              setGameStarted(false);
-              setMode(null);
-              setRoomId("");
-            }}
-          />
-        ) : !mode ? (
-          <GameModeSelector onSelectMode={handleSelectMode} />
-        ) : (
-          <div>
-            <h2>🏆 Leaderboard</h2>
-            <div className="leaderboard">
-              <ol>
-                {Array.isArray(leaderboard) &&
-                  leaderboard
-                    .slice() // Create a shallow copy of the array
-                    .reverse() // Reverse the array copy
-                    .map((player, index) => (
-                      <li key={index}>
-                        {player.name} - Wins: {player.wins} | Losses:{" "}
-                        {player.losses}
-                      </li>
-                    ))}
-              </ol>
+        <div className="gameinfo">
+          <div className="topcontainer">
+            <h3>Card Arena Battle</h3>
+            <span
+              className={`text-sm font-bold ${
+                isOnline ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              Server is
+              {isOnline ? " Online 🟢" : " Offline 🔴"}
+            </span>
+          </div>
+          {gameStarted ? (
+            <GameBoard
+              roomId={roomId}
+              mode={mode}
+              playerCards={playerCards}
+              updateLeaderboard={updateLeaderboard}
+              onExit={() => {
+                setGameStarted(false);
+                setMode(null);
+                setRoomId("");
+              }}
+            />
+          ) : !mode ? (
+            <GameModeSelector onSelectMode={handleSelectMode} />
+          ) : (
+            <div className="menu">
+              <div className="leaderboard-container">
+                <h3>🏆 Leaderboard</h3>
+                <div className="leaderboard">
+                  <ol>
+                    {Array.isArray(leaderboard) &&
+                      leaderboard
+                        .slice() // Create a shallow copy of the array
+                        .reverse() // Reverse the array copy
+                        .map((player, index) => (
+                          <li key={index}>
+                            {player.name} - Wins: {player.wins} | Losses:{" "}
+                            {player.losses}
+                          </li>
+                        ))}
+                  </ol>
+                </div>
+              </div>
             </div>
-
-            {mode === "bot" && (
-              <div>
+          )}
+        </div>
+        {mode === "multiplayer" && (
+          <div className="customcontainer">
+            <div className="rooms">
+              <div className="joinroom">
                 <input
                   type="text"
-                  placeholder="Your Name"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  required
+                  placeholder="Enter Room ID to Join"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
                 />
-                <button onClick={() => setGameStarted(true)}>
-                  Start AI Battle
+                <button
+                  onClick={joinGame}
+                  className="bg-blue-500 text-white p-3 rounded-lg"
+                >
+                  Join Room
                 </button>
               </div>
-            )}
 
-            {mode === "multiplayer" && (
-              <div>
+              <div className="lobbycontainer">
                 <input
                   type="text"
                   placeholder="Your Name"
@@ -192,29 +222,23 @@ const App = () => {
                 >
                   Create New Room
                 </button>
-
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Enter Room ID to Join"
-                    value={roomId}
-                    onChange={(e) => setRoomId(e.target.value)}
-                  />
-                  <button
-                    onClick={joinGame}
-                    className="bg-blue-500 text-white p-3 rounded-lg"
-                  >
-                    Join Room
-                  </button>
-                </div>
               </div>
-            )}
+            </div>
           </div>
         )}
+        {mode === "createcard" && (
+          <CardCreator
+            addCustomCard={(card) => setPlayerCards([...playerCards, card])}
+          />
+        )}
 
-        <CardCreator
-          addCustomCard={(card) => setPlayerCards([...playerCards, card])}
-        />
+        {mode === "bot" && (
+          <div className="startbtn">
+            <button onClick={() => setGameStarted(true)}>
+              Start AI Battle 👹
+            </button>
+          </div>
+        )}
       </section>
     </main>
   );
