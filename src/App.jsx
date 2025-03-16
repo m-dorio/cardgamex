@@ -32,32 +32,23 @@ const App = () => {
     }
   };
 
-const updateLeaderboard = (result) => {
-  let scores = JSON.parse(localStorage.getItem("leaderboard"));
+  const updateLeaderboard = (result) => {
+    const scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    const existingPlayer = scores.find((p) => p.name === playerName);
 
+    if (existingPlayer) {
+      existingPlayer[result]++;
+    } else {
+      scores.push({
+        name: playerName,
+        wins: result === "wins" ? 1 : 0,
+        losses: result === "losses" ? 1 : 0,
+      });
+    }
 
-  // ✅ Ensure scores is always an array
-  if (!Array.isArray(scores)) {
-    console.error("⚠ leaderboard is corrupted! Resetting...");
-    scores = [];
-  }
-
-  const existingPlayer = scores.find((p) => p.name === playerName);
-
-  if (existingPlayer) {
-    existingPlayer[result] = (existingPlayer[result] || 0) + 1;
-  } else {
-    scores.push({
-      name: playerName,
-      wins: result === "wins" ? 1 : 0,
-      losses: result === "losses" ? 1 : 0,
-    });
-  }
-
-  localStorage.setItem("leaderboard", JSON.stringify(scores));
-  // setLeaderboard([...scores]);
-};
-
+    localStorage.setItem("leaderboard", JSON.stringify(scores));
+    setLeaderboard(scores);
+  };
 
   const createRoom = () => {
     if (!playerName.trim()) {

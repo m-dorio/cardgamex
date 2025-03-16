@@ -6,7 +6,6 @@ const GameBoard = ({ playerCards, mode, ...props }) => {
     <GameBoardAI playerCards={playerCards} {...props} />
   ) : (
     <GameBoardMultiplayer playerCards={playerCards} {...props} />
-
   );
 };
 
