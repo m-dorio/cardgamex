@@ -11,6 +11,9 @@ const GameBoardMultiplayer = ({
     const [playerImage, setPlayerImage] = useState(
     "./src/assets/images/avatar_1.png"
   );
+  const [otherPlayerImage, setOtherPlayerImage] = useState(
+    "./src/assets/images/avatar_1.png"
+  );
   const [playerHP, setPlayerHP] = useState(100);
   const [playerDamage, setPlayerDamage] = useState(0);
   const [enemyHP, setEnemyHP] = useState(100);
@@ -167,6 +170,11 @@ const GameBoardMultiplayer = ({
     onExit();
   };
 
+    const handleSetAvatar = () => {
+    setPlayerImage(inputValue.trim() || "./src/assets/images/avatar_1.png"); // Use default if empty
+  };
+
+
   return (
     <div className="p-4 border bg-gray-200">
       <div className="roominfo">
@@ -177,7 +185,7 @@ const GameBoardMultiplayer = ({
         <div className="player">
           <div className="profile">
             <Gravatar
-            email="michaelangelo.dorio@gmail.com"
+            email={playerImage}
             size={100}
             fallback="./src/assets/images/avatar_1.png"
           />
@@ -206,7 +214,7 @@ const GameBoardMultiplayer = ({
         <div className="opponent">
           <div className="profile">
              <Gravatar
-            email={playerImage}
+            email={otherPlayerImage}
             size={50}
             fallback="./src/assets/images/avatar_1.png"
           />

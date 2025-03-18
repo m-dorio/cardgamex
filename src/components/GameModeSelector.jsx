@@ -39,7 +39,16 @@ const GameModeSelector = ({ onSelectMode }) => {
         }`}
         disabled={!!selectedMode}
       >
-        🌍 Custom Card (Make A Card)
+        ⚔ Custom Card (Make A Card)
+      </button>
+      <button
+        onClick={() => handleSelectMode("createprofile")}
+        className={`bg-green-500 text-white p-3 m-2 rounded-lg w-48 ${
+          selectedMode ? "opacity-50 cursor-not-allowed" : ""
+        }`}
+        disabled={!!selectedMode}
+      >
+        💀 Profile (Options)
       </button>
     </div>
   );

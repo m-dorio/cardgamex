@@ -44,6 +44,17 @@ h1 {
   line-height: 1.1;
 }
 
+button.back {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #2f3132;
+  cursor: pointer;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -70,6 +81,13 @@ main.game-section {
   margin: auto;
   gap: 30px;
   width: 100%;
+}
+
+section .nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80%;
 }
 
 section.game-container {
@@ -345,11 +363,9 @@ section.game-container {
   }
   .player {
     display: flex;
-    justify-content: start;
   }
   .opponent {
     display: flex;
-    justify-content: end;
   }
 
   .atkbuttons {

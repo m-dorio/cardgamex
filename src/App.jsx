@@ -5,6 +5,7 @@ import GameBoard from "./components/GameBoard";
 import CardCreator from "./components/CardCreator";
 import GameModeSelector from "./components/GameModeSelector";
 import Gravatar from "./components/Gravatar";
+import UserProfile from "./components/UserProfile";
 
 const App = () => {
   const [roomId, setRoomId] = useState("");
@@ -152,17 +153,32 @@ const App = () => {
   return (
     <main className="game-section">
       <section className="game-container">
-        <div className="gameinfo">
-          <div className="topcontainer">
-            <h1>Card Arena Battle</h1>
-            <span
+        <div className="nav">
+           <span
               className={`text-sm font-bold ${
                 isOnline ? "text-green-500" : "text-red-500"
               }`}
             >
               Server is
               {isOnline ? " Online 🟢" : " Offline 🔴"}
-            </span>
+          </span>
+          
+          {(gameStarted || mode) && (
+        <button
+          onClick={() => {
+            setGameStarted(false);
+            setMode(null);
+            setRoomId("");
+          }}
+          className="back bg-gray-500 text-white p-2 rounded-lg mt-4"
+        >
+          🔙 Back
+        </button>
+      )}
+        </div>
+        <div className="gameinfo">
+          <div className="topcontainer">
+            <h1>Card Arena Battle</h1>         
           </div>
           {gameStarted ? (
             <GameBoard
@@ -200,7 +216,7 @@ const App = () => {
             </div>
           )}
         </div>
-        {mode === "multiplayer" && (
+        {!gameStarted && mode === "multiplayer" && (
           <div className="customcontainer">
             <div className="rooms">
               <div className="createroom">
@@ -267,18 +283,7 @@ const App = () => {
           </div>
         )}
       </section>
-      {(gameStarted || mode) && (
-        <button
-          onClick={() => {
-            setGameStarted(false);
-            setMode(null);
-            setRoomId("");
-          }}
-          className="bg-gray-500 text-white p-2 rounded-lg mt-4"
-        >
-          🔙 Back
-        </button>
-      )}
+      
     </main>
   );
 };
