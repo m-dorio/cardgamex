@@ -35,7 +35,7 @@ const UserProfile = ({ addCustomCard }) => {
         </div>
         <input
           type="text"
-          value={name}
+          value={avatar}
           onChange={(e) => setAvatar(e.target.value)}
           placeholder="URL to Avatar"
         />
