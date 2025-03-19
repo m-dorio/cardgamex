@@ -19,7 +19,7 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   const [cardAttack, setCardAttack] = useState(0);
   const playerRoll = Math.floor(Math.random() * 6) + 1;
   const enemyRoll = Math.floor(Math.random() * 6) + 1;
-
+ 
   const rand = () => {
     setDamage(Math.floor(cardAttack * (1 + Math.random() * 0.5)));
   };
