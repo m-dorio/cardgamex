@@ -177,45 +177,31 @@ const App = () => {
       )}
         </div>
         <div className="gameinfo">
-          <div className="topcontainer">
-            <h1>Card Arena Battle</h1>         
-          </div>
+        
           {gameStarted ? (
-            <GameBoard
-              roomId={roomId}
-              mode={mode}
-              playerCards={playerCards}
-              updateLeaderboard={updateLeaderboard}
-              onExit={() => {
-                setGameStarted(false);
-                setMode(null);
-                setRoomId("");
-              }}
-            />
+            <>
+              <div className="topcontainer">
+                <h1>Card Arena Battle</h1>
+              </div>
+              <GameBoard
+                roomId={roomId}
+                mode={mode}
+                playerCards={playerCards}
+                updateLeaderboard={updateLeaderboard}
+                onExit={() => {
+                  setGameStarted(false);
+                  setMode(null);
+                  setRoomId("");
+                }}
+              
+              />
+            </>
           ) : !mode ? (
             <GameModeSelector onSelectMode={handleSelectMode} />
-          ) : (
-            <div className="menu">
-              <div className="leaderboard-container">
-                <h3>🏆 Leaderboard</h3>
-                <div className="leaderboard">
-                  <ol>
-                    {Array.isArray(leaderboard) &&
-                      leaderboard
-                        .slice() // Create a shallow copy of the array
-                        .reverse() // Reverse the array copy
-                        .map((player, index) => (
-                          <li key={index}>
-                            {player.name} - Wins: {player.wins} | Losses:{" "}
-                            {player.losses}
-                          </li>
-                        ))}
-                  </ol>
-                </div>
-              </div>
-            </div>
-          )}
+          ) : ( <></> ) }
         </div>
+         
+        
         {!gameStarted && mode === "multiplayer" && (
           <div className="customcontainer">
             <div className="rooms">
@@ -281,6 +267,31 @@ const App = () => {
               Start AI Battle 👹
             </button>
           </div>
+        )}
+        {mode === "createprofile" &&(  <CardCreator
+            addCustomCard={(card) => setPlayerCards([...playerCards, card])}
+          />) }
+
+        {!mode || mode !== "createprofile" && (
+                  <div className="menu">
+              <div className="leaderboard-container">
+                <h3>🏆 Leaderboard</h3>
+                <div className="leaderboard">
+                  <ol>
+                    {Array.isArray(leaderboard) &&
+                      leaderboard
+                        .slice() // Create a shallow copy of the array
+                        .reverse() // Reverse the array copy
+                        .map((player, index) => (
+                          <li key={index}>
+                            {player.name} - Wins: {player.wins} | Losses:{" "}
+                            {player.losses}
+                          </li>
+                        ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
         )}
       </section>
       
