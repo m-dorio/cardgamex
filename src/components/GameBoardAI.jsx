@@ -3,40 +3,54 @@ import { useState, useEffect } from "react";
 const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   const [playerName, setPlayerName] = useState("");
   const [isNameSet, setIsNameSet] = useState(false);
+  const [playerDice, setPlayerDice] = useState(null);
   const [playerHP, setPlayerHP] = useState(100);
+  const [playerDamage, setPlayerDamage] = useState(0);
+  const [enemyDice, setEnemyDice] = useState(null);
   const [enemyHP, setEnemyHP] = useState(100);
+  const [enemyDamage, setEnemyDamage] = useState(0);
   const [message, setMessage] = useState("Roll the dice to start!");
   const [gameOver, setGameOver] = useState(false);
   const [turn, setTurn] = useState(null);
-  const [playerDice, setPlayerDice] = useState(null);
-  const [enemyDice, setEnemyDice] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
   const [aiSelectedCard, setAiSelectedCard] = useState(null);
-  const [isRollingDice, setIsRollingDice] = useState(false);
+  const [rollingDice, setRollingDice] = useState(false);
+  const [damage, setDamage] = useState(0);
+  const [cardAttack, setCardAttack] = useState(0);
+  const playerRoll = Math.floor(Math.random() * 6) + 1;
+  const enemyRoll = Math.floor(Math.random() * 6) + 1;
+
+  const rand = () => {
+    setDamage(Math.floor(cardAttack * (1 + Math.random() * 0.5)));
+  };
 
   const rollDice = () => {
-    setIsRollingDice(true);
-    const playerRoll = Math.floor(Math.random() * 6) + 1;
-    const enemyRoll = Math.floor(Math.random() * 6) + 1;
+    if (rollingDice || gameOver) return;
+
+    setRollingDice(true);
+
     setPlayerDice(playerRoll);
+
     setEnemyDice(enemyRoll);
     setMessage(`🎲 ${playerName} rolled ${playerRoll}, AI rolled ${enemyRoll}`);
 
-    if (playerRoll > enemyRoll) {
-      setMessage("🎉 You won the roll! Your turn to attack.");
-      setTimeout(() => {
-        setTurn("player");
-        setIsRollingDice(false);
-      }, 0);
-    } else if (enemyRoll > playerRoll) {
-      setMessage("🤖 AI won the roll! AI is preparing to attack...");
-      setTimeout(() => {
-        setTurn("enemy");
-        setIsRollingDice(false);
-      }, 0);
-    } else {
-      setMessage("🎲 It's a tie! Rolling again...");
-      setTimeout(rollDice, 1500);
-    }
+    setTimeout(() => {
+      if (playerRoll > enemyRoll) {
+        setMessage("🎉 You won the roll! Your turn to attack.");
+        setTimeout(() => {
+          setTurn("player");
+        }, 0);
+      } else if (enemyRoll > playerRoll) {
+        setMessage("🤖 AI won the roll! AI is preparing to attack...");
+        setTimeout(() => {
+          setTurn("enemy");
+        }, 0);
+      } else {
+        setMessage("🎲 It's a tie! Rolling again...");
+        setTimeout(rollDice, 1500);
+      }
+      setRollingDice(false);
+    }, 2000);
   };
 
   useEffect(() => {
@@ -52,10 +66,13 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   }, [turn, gameOver]);
 
   const handleAttack = (card) => {
-    if (gameOver || turn !== "player") return;
-
-    const damage = Math.floor(card.attack * (1 + Math.random() * 0.5));
-
+    if (playerDice <= enemyDice) {
+      setMessage("🚫 Your dice roll is too low! Can't attack.");
+      return;
+    }
+    setSelectedCard(card.name);
+    playerCards.map((card, index) => setCardAttack(card.attack));
+    setPlayerDamage(damage);
     setEnemyHP((prev) => {
       const newHP = Math.max(0, prev - damage);
 
@@ -65,42 +82,47 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
         updateLeaderboard("wins");
       } else {
         setTimeout(() => {
-          setTurn("enemy");
+          rand();
+          setTurn(null);
           setMessage("🤖 AI is preparing to attack...");
-        }, 0);
+        }, 1500);
       }
 
       return newHP;
     });
   };
 
-  const enemyAttack = () => {
-    if (gameOver || turn !== "enemy") return;
+  const enemyAttack = (card) => {
+    if (enemyDice <= playerDice) {
+      setMessage("🤖 AI's dice roll is too low! AI can't attack.");
+      setTurn("player");
+      return;
+    }
 
     const randomCard =
       playerCards[Math.floor(Math.random() * playerCards.length)];
     setAiSelectedCard(randomCard.name);
+    playerCards.map((card, index) => setCardAttack(card.attack));
+    setEnemyDamage(damage);
+    setPlayerHP((prev) => {
+      const newHP = Math.max(0, prev - damage);
 
-    setTimeout(() => {
-      const enemyDamage = Math.floor(
-        randomCard.attack * (1 + Math.random() * 0.5)
-      );
-      setPlayerHP((prev) => {
-        const newHP = Math.max(0, prev - enemyDamage);
-        if (newHP === 0) {
-          setGameOver(true);
-          setMessage("💀 You lost! Game Over.");
-          updateLeaderboard("losses");
-        } else {
-          setTimeout(() => {
-            setAiSelectedCard(null);
-            setTurn("player");
-            setMessage("🎉 Your turn to attack!");
-          }, 1500);
-        }
-        return newHP;
-      });
-    }, 1500);
+      if (newHP === 0) {
+        setGameOver(true);
+        setMessage("💀 You lost! Game Over.");
+        updateLeaderboard("losses");
+      } else {
+        setTimeout(() => {
+          rand();
+          setAiSelectedCard(null);
+          setTurn(null);
+          setMessage("🎉 Your turn to attack!");
+          rollDice();
+        }, 1500);
+      }
+
+      return newHP;
+    });
   };
 
   const handlePlayAgain = () => {
@@ -109,10 +131,14 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
     setPlayerHP(100);
     setEnemyHP(100);
     setTurn(null);
-    setPlayerDice(null);
+    setPlayerDice(0);
     setEnemyDice(null);
+    setEnemyDamage(0);
+    setDamage(0);
+    setPlayerDamage(0);
     setAiSelectedCard(null);
     rollDice();
+    rand();
   };
 
   const handleNameSubmit = (e) => {
@@ -123,11 +149,7 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
   };
 
   return (
-    <div
-      className="container"
-      style={{
-      }}
-    >
+    <div className="container" style={{}}>
       {!isNameSet ? (
         <div style={{ textAlign: "center", padding: "20px" }}>
           <h2>Enter Your Name to Start the Battle</h2>
@@ -163,30 +185,60 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
           <h2 style={{ fontSize: "24px", fontWeight: "bold" }}>
             ⚔ AI Battle ⚔
           </h2>
-          <p style={{ margin: "16px 0", fontSize: "16px" }}>{message}</p>
-          {!gameOver && aiSelectedCard && (
-            <span
-              style={{
-                textAlign: "center",
-                color: "#e53e3e",
-                fontWeight: "bold",
-              }}
-            >
-              🤖 AI used {aiSelectedCard}!
-            </span>
-          )}
-
           <div className="stats" style={{}}>
-            <div className="player" style={{ textAlign: "center" }}>
-              <h3>🔥 {playerName}</h3>
-              <span>HP: {playerHP}</span>
-              <p>Dice: {playerDice ?? "?"}</p>
-            </div>
             <div className="opponent" style={{ textAlign: "center" }}>
-              <h3>🤖 AI Opponent</h3>
-              <span>HP: {enemyHP}</span>
-              <p>Dice: {enemyDice ?? "?"}</p>
+              <div className="battle-status">
+                <h3>🤖 AI Opponent</h3>
+                <span>HP: {enemyHP}</span>
+              </div>
+              <p className="battle-data">
+                <span>
+                  DMG: {enemyDamage} + bonus {enemyDice} dmg
+                </span>
+                <span>Dice: {enemyDice}</span>
+              </p>
             </div>
+            <p style={{ margin: "16px 0", fontSize: "16px" }}>
+              <span>Total Damage {damage + enemyDice}</span>
+            </p>
+
+            <div className="phase-status">
+              <p style={{ margin: "16px 0", fontSize: "16px" }}>{message}</p>
+
+              {!gameOver && aiSelectedCard && (
+                <>
+                  <span
+                    style={{
+                      textAlign: "center",
+                      color: "#e53e3e",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    🤖 AI used {aiSelectedCard}!
+                  </span>
+                </>
+              )}
+            </div>
+
+            <div className="player" style={{ textAlign: "center" }}>
+              <div className="battle-status">
+                <h3>🔥 {playerName}</h3>
+                <span> HP: {playerHP}</span>
+              </div>
+              <p className="battle-data">
+                <span>
+                  DMG: {damage} + bonus {playerDice} dmg
+                </span>
+                <span> Dice: {playerDice ?? "?"}</span>
+              </p>
+            </div>
+            <p style={{ margin: "16px 0", fontSize: "16px" }}>
+              <span>
+                Used {selectedCard} ⚔ with {damage}, bonus dmg of: {playerDice}{" "}
+                and
+              </span>
+              <span> Total Damage {damage + playerDice}</span>
+            </p>
           </div>
 
           <div className="atkbuttons">
@@ -204,9 +256,9 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
                       turn !== "player" || gameOver ? "not-allowed" : "pointer",
                     margin: "8px",
                   }}
-                  disabled={turn !== "player" || gameOver}
+                  disabled={turn !== "player" || rollingDice || gameOver}
                 >
-                  Use {card.name} ⚔
+                  {card.name} ⚔ [{card.attack}]
                 </button>
               ))}
           </div>

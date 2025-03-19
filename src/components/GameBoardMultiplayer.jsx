@@ -183,21 +183,20 @@ const GameBoardMultiplayer = ({
       </div>
       <div className="flex justify-between">
         <div className="player">
-          <div className="profile">
-            <Gravatar
-            email={playerImage}
-            size={100}
-            fallback="./src/assets/images/avatar_1.png"
-          />
-          <h4>🔥 {players[playerId]?.name || "You"}</h4>
-          </div>
-
           <div className="attributes">
             <span className="phealth">HP: {playerHP}</span>
             <span className="pdamage">
               -{enemyDamage}HP + {diceResult} dmg
             </span>
           </div>
+          <h4>🔥 {players[playerId]?.name || "You"}</h4>
+          </div>
+          <div className="profile">
+            <Gravatar
+            email={playerImage}
+            size={100}
+            fallback="./src/assets/images/avatar_1.png"
+          />
         </div>
         <div className="phase">
             <span>Status:</span>

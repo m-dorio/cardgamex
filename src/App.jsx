@@ -13,14 +13,22 @@ const App = () => {
   const [playerImage, setPlayerImage] = useState(
     "./src/assets/images/avatar_1.png"
   );
-   const [inputValue, setInputValue] = useState(""); 
+  const [inputValue, setInputValue] = useState("");
   const [mode, setMode] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
+
+  const getRandomFloat = (min, max) => {
+    return parseFloat((Math.random() * (max - min) + min).toFixed(2));
+  };
+
   const [playerCards, setPlayerCards] = useState([
-    { name: "Fire Dragon", attack: 20 },
-    { name: "Lightning Phoenix", attack: 15 },
-    { name: "Water Serpent", attack: 10 },
+    { name: "Fire Punch", attack: getRandomFloat(8, 20).toFixed(1) },
+    { name: "Lightning Poop", attack: getRandomFloat(10, 15).toFixed(1) },
+    { name: "Water Serpent", attack: getRandomFloat(6, 18).toFixed(1) },
+    { name: "Winter Fog", attack: getRandomFloat(7, 20).toFixed(1) },
+    { name: "Poison rock", attack: getRandomFloat(10, 16).toFixed(1) },
   ]);
+
   const [leaderboard, setLeaderboard] = useState([]);
   const [players, setPlayers] = useState({});
   const [scores, setScores] = useState({});
@@ -154,30 +162,29 @@ const App = () => {
     <main className="game-section">
       <section className="game-container">
         <div className="nav">
-           <span
-              className={`text-sm font-bold ${
-                isOnline ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              Server is
-              {isOnline ? " Online 🟢" : " Offline 🔴"}
+          <span
+            className={`text-sm font-bold ${
+              isOnline ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            Server is
+            {isOnline ? " Online 🟢" : " Offline 🔴"}
           </span>
-          
+
           {(gameStarted || mode) && (
-        <button
-          onClick={() => {
-            setGameStarted(false);
-            setMode(null);
-            setRoomId("");
-          }}
-          className="back bg-gray-500 text-white p-2 rounded-lg mt-4"
-        >
-          🔙 Back
-        </button>
-      )}
+            <button
+              onClick={() => {
+                setGameStarted(false);
+                setMode(null);
+                setRoomId("");
+              }}
+              className="back bg-gray-500 text-white p-2 rounded-lg mt-4"
+            >
+              🔙 Back
+            </button>
+          )}
         </div>
         <div className="gameinfo">
-        
           {gameStarted ? (
             <>
               <div className="topcontainer">
@@ -193,15 +200,15 @@ const App = () => {
                   setMode(null);
                   setRoomId("");
                 }}
-              
               />
             </>
           ) : !mode ? (
             <GameModeSelector onSelectMode={handleSelectMode} />
-          ) : ( <></> ) }
+          ) : (
+            <></>
+          )}
         </div>
-         
-        
+
         {!gameStarted && mode === "multiplayer" && (
           <div className="customcontainer">
             <div className="rooms">
@@ -229,7 +236,7 @@ const App = () => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                 />
-                
+
                 <button onClick={handleSetAvatar}>Set Avatar</button>
                 <Gravatar
                   email={playerImage}
@@ -268,12 +275,15 @@ const App = () => {
             </button>
           </div>
         )}
-        {mode === "createprofile" &&(  <CardCreator
+        {mode === "createprofile" && (
+          <UserProfile
             addCustomCard={(card) => setPlayerCards([...playerCards, card])}
-          />) }
+          />
+        )}
 
-        {!mode || mode !== "createprofile" && (
-                  <div className="menu">
+        {!mode ||
+          (mode !== "createprofile" && (
+            <div className="menu">
               <div className="leaderboard-container">
                 <h3>🏆 Leaderboard</h3>
                 <div className="leaderboard">
@@ -292,9 +302,8 @@ const App = () => {
                 </div>
               </div>
             </div>
-        )}
+          ))}
       </section>
-      
     </main>
   );
 };
