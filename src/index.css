@@ -13,6 +13,68 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 1. Use a more-intuitive box-sizing model */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+/* 2. Remove default margin */
+* {
+  margin: 0;
+}
+body {
+  /* 3. Add accessible line-height */
+  line-height: 1.5;
+  /* 4. Improve text rendering */
+  -webkit-font-smoothing: antialiased;
+}
+/* 5. Improve media defaults */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+/* 6. Inherit fonts for form controls */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+/* 7. Avoid text overflows */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+/* 8. Improve line wrapping */
+p {
+  text-wrap: pretty;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+/*
+  9. Create a root stacking context
+*/
+#root,
+#__next {
+  isolation: isolate;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -24,24 +86,31 @@ a:hover {
 
 body {
   margin: 0;
-
   place-items: center;
   min-width: 320px;
-
   width: 100%;
+  margin: 0;
+  box-sizing: border-box;
 }
 
-body > div {
+body #root {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 1920px;
   min-height: 100vh;
+  background-color: #242424;
 }
 
 h1 {
   font-size: 30px;
   line-height: 1.1;
+  margin: 0;
+}
+
+h2 {
+  margin: 0 auto 10px;
 }
 
 button.back {
@@ -81,34 +150,56 @@ main.game-section {
   margin: auto;
   gap: 30px;
   width: 100%;
+  max-width: 1920px;
+  margin: 80px auto 0;
 }
 
-section .nav {
+main .nav {
+  top: 0;
+  position: absolute;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 80%;
+  width: 100%;
+  background-color: #2f3132;
+  padding: 10px 30px;
 }
 
 section.game-container {
-  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 20px;
   align-items: center;
-  margin: auto;
-  max-width: 800px;
+  width: 100%;
+  padding: 0 30px;
+}
+
+section.game-container > * {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
 }
 
 .battle-status {
   display: flex;
   flex-direction: column;
   align-items: start;
-  width: 50%;
+  width: 75%;
 }
-.battle-status h3{
-  margin: 0 0 20px;
+.battle-status h3 {
+  margin: 0 0 10px;
+}
+.ai-tooltip {
+  text-align: end;
+  width: 100%;
+}
+.tooltip {
+  display: flex;
+  justify-content: space-between;
+  gap: 50px;
+  width: 100%;
 }
 
 .phase-status {
@@ -118,15 +209,15 @@ section.game-container {
 }
 
 .leaderboard {
-  width: 100%;
-  max-height: 200px;
+  width: calc(100% - 30px);
   overflow-y: scroll;
   margin: auto;
   border-radius: 10px;
   border: #213547 solid 1px;
   background-color: #213547;
 }
-.leaderboard ol {
+
+/* .leaderboard ol {
   display: flex;
   flex-direction: column;
   justify-content: start;
@@ -135,10 +226,26 @@ section.game-container {
   height: 100%;
   margin: 0;
   padding: 10px;
-}
+} */
 .leaderboard ol li {
   color: rgb(186, 202, 219);
   font-size: 20px;
+  text-align: center;
+}
+.leaderboard ol {
+  column-count: 3;
+  list-style-type: none;
+  column-rule: 2px dashed #48b3ff;
+  column-rule-width: 3px;
+  column-gap: calc(100% / 8);
+  padding: 30px 20px;
+}
+
+.leaderboard .score-data {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .custom-card-creation {
@@ -182,7 +289,7 @@ aside.addinfo {
   flex-wrap: wrap;
 }
 .atkbuttons button {
-  width: 140px;
+  width: 45%;
   min-height: 50px;
   height: 60px;
 }
@@ -224,12 +331,11 @@ aside.addinfo {
 
 .startbtn {
   width: 100%;
-  display: flex;
-  flex-direction: column;
+  max-width: 500px;
   align-items: center;
 }
 .startbtn button {
-  width: 50%;
+  width: 80%;
 }
 
 .leaderboard-container {
@@ -275,6 +381,7 @@ aside.addinfo {
   gap: 10px;
   text-align: center;
   width: 100%;
+  max-width: 300px;
 }
 .roominfo {
   display: flex;
@@ -319,12 +426,70 @@ aside.addinfo {
   gap: 10px;
 }
 
-.battle-data{
-  width: 50%;
+.battle-data {
+  width: 120px;
   display: flex;
   flex-direction: column;
   align-items: start;
-  gap: 20px;
+  gap: 10px;
+}
+.battle-data span {
+  font-size: 16px;
+  font-weight: 700;
+  color: #bbe3ea;
+}
+
+.hp-bar-container {
+  width: 100%; /* Adjust as needed */
+  max-width: 600px;
+  height: 20px;
+  background-color: #444;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+  margin: 5px 0;
+}
+
+.hp-bar {
+  height: 100%;
+  background-color: #4caf50;
+  transition: width 0.3s ease-in-out;
+}
+
+.player-container {
+  background-color: rgba(0, 128, 0, 0.1);
+}
+.hp-bar-player {
+  background-color: green;
+}
+.hp-bar-player.mid {
+  background-color: orange;
+}
+.hp-bar-player.low {
+  background-color: darkred;
+}
+
+.opponent-container {
+  background-color: rgba(255, 196, 0, 0.1);
+}
+.hp-bar-enemy {
+  background-color: rgb(0, 68, 255);
+}
+.hp-bar-enemy.mid {
+  background-color: rgb(75, 0, 161);
+}
+.hp-bar-enemy.low {
+  background-color: rgb(82, 0, 0);
+}
+
+.hp-text {
+  font-size: 14px;
+  font-weight: bold;
+  display: block;
+  text-align: center;
+  position: absolute;
+  top: 0;
+  left: 50%;
 }
 
 .player,
@@ -335,6 +500,7 @@ aside.addinfo {
   gap: 20px;
   padding: 10px;
   border: 0;
+  width: 100%;
 }
 
 .player img,
@@ -395,6 +561,39 @@ aside.addinfo {
   }
 }
 
+@media (max-width: 1199px) {
+  main .nav {
+    padding: 10px 20px;
+  }
+  section.game-container {
+    flex-direction: column;
+    padding: 50px 30px;
+    gap: 50px;
+  }
+  .leaderboard ol {
+    column-count: 2;
+  }
+  .leaderboard ol li {
+    font-size: 18px;
+  }
+  main.game-section {
+    gap: 10px;
+  }
+}
+@media (max-width: 767px) {
+  section.game-container {
+    padding: 30px 20px;
+  }
+  .leaderboard ol {
+    column-count: 1;
+  }
+  .leaderboard ol li {
+    font-size: 14px;
+  }
+  .atkbuttons button {
+    width: 45%;
+  }
+}
 @media (max-width: 575px) {
   .topcontainer h1 {
     text-align: center;
@@ -413,6 +612,8 @@ aside.addinfo {
   .container h2 {
     text-align: center;
     margin: 20px auto;
+    font-size: 12px;
+    margin: 0 0 20px;
   }
 
   .stats {
@@ -426,9 +627,7 @@ aside.addinfo {
     padding: 0;
     margin: 0;
   }
-  .player {
-    display: flex;
-  }
+  .player,
   .opponent {
     display: flex;
   }
@@ -447,17 +646,7 @@ aside.addinfo {
     align-items: baseline;
     width: 100%;
   }
-  .leaderboard ol {
-    text-align: start;
-    align-items: baseline;
-    width: 100%;
-  }
-  .leaderboard-container > * {
-    display: flex;
-    justify-content: start;
-    text-align: start;
-    width: 100%;
-  }
+
   .rooms > * {
     display: flex;
     justify-content: center;

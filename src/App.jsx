@@ -17,18 +17,17 @@ const App = () => {
   const [mode, setMode] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
 
-  const getRandomFloat = (min, max) => {
-    return parseFloat((Math.random() * (max - min) + min).toFixed(2));
+  const getRandomWeighted = (min, max, weight = 2) => {
+    return Math.round(min + Math.pow(Math.random(), weight) * (max - min));
   };
 
   const [playerCards, setPlayerCards] = useState([
-    { name: "Fire Punch", attack: getRandomFloat(8, 20).toFixed(1) },
-    { name: "Lightning Poop", attack: getRandomFloat(10, 15).toFixed(1) },
-    { name: "Water Serpent", attack: getRandomFloat(6, 18).toFixed(1) },
-    { name: "Winter Fog", attack: getRandomFloat(7, 20).toFixed(1) },
-    { name: "Poison rock", attack: getRandomFloat(10, 16).toFixed(1) },
+    { name: "Fire Punch", attack: getRandomWeighted(5, 20, 2.5) },
+    { name: "Lightning Poop", attack: getRandomWeighted(3, 18, 2.5) },
+    { name: "Water Serpent", attack: getRandomWeighted(2, 15, 2.5) },
+    { name: "Winter Fog", attack: getRandomWeighted(4, 16, 2.5) },
+    { name: "Poison Rock", attack: getRandomWeighted(1, 14, 2.5) },
   ]);
-
   const [leaderboard, setLeaderboard] = useState([]);
   const [players, setPlayers] = useState({});
   const [scores, setScores] = useState({});
@@ -160,54 +159,54 @@ const App = () => {
 
   return (
     <main className="game-section">
-      <section className="game-container">
-        <div className="nav">
-          <span
-            className={`text-sm font-bold ${
-              isOnline ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            Server is
-            {isOnline ? " Online 🟢" : " Offline 🔴"}
-          </span>
+      <div className="nav">
+        <span
+          className={`text-sm font-bold ${
+            isOnline ? "text-green-500" : "text-red-500"
+          }`}
+        >
+          Server is
+          {isOnline ? " Online 🟢" : " Offline 🔴"}
+        </span>
 
-          {(gameStarted || mode) && (
-            <button
-              onClick={() => {
+        {(gameStarted || mode) && (
+          <button
+            onClick={() => {
+              setGameStarted(false);
+              setMode(null);
+              setRoomId("");
+            }}
+            className="back bg-gray-500 text-white p-2 rounded-lg mt-4"
+          >
+            🔙
+          </button>
+        )}
+      </div>
+      <header>
+        <div className="topcontainer">
+          <h1>Card Arena Battle</h1>
+        </div>
+      </header>
+      <section className="game-container">
+        {gameStarted ? (
+          <div className="gameinfo">
+            <GameBoard
+              roomId={roomId}
+              mode={mode}
+              playerCards={playerCards}
+              updateLeaderboard={updateLeaderboard}
+              onExit={() => {
                 setGameStarted(false);
                 setMode(null);
                 setRoomId("");
               }}
-              className="back bg-gray-500 text-white p-2 rounded-lg mt-4"
-            >
-              🔙 Back
-            </button>
-          )}
-        </div>
-        <div className="gameinfo">
-          {gameStarted ? (
-            <>
-              <div className="topcontainer">
-                <h1>Card Arena Battle</h1>
-              </div>
-              <GameBoard
-                roomId={roomId}
-                mode={mode}
-                playerCards={playerCards}
-                updateLeaderboard={updateLeaderboard}
-                onExit={() => {
-                  setGameStarted(false);
-                  setMode(null);
-                  setRoomId("");
-                }}
-              />
-            </>
-          ) : !mode ? (
-            <GameModeSelector onSelectMode={handleSelectMode} />
-          ) : (
-            <></>
-          )}
-        </div>
+            />
+          </div>
+        ) : !mode ? (
+          <GameModeSelector onSelectMode={handleSelectMode} />
+        ) : (
+          <></>
+        )}
 
         {!gameStarted && mode === "multiplayer" && (
           <div className="customcontainer">
@@ -293,9 +292,19 @@ const App = () => {
                         .slice() // Create a shallow copy of the array
                         .reverse() // Reverse the array copy
                         .map((player, index) => (
-                          <li key={index}>
-                            {player.name} - Wins: {player.wins} | Losses:{" "}
-                            {player.losses}
+                          <li className="score-data" key={index}>
+                            <span>
+                              {player.name} (👹):{" "}
+                              {player.wins > 0
+                                ? "★".repeat(Math.min(player.wins, 3))
+                                : "☆"}
+                            </span>
+                            <span>
+                              (🤖):{" "}
+                              {player.losses > 0
+                                ? "★".repeat(Math.min(player.losses, 3))
+                                : "☆"}
+                            </span>
                           </li>
                         ))}
                   </ol>
