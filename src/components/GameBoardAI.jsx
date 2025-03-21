@@ -27,8 +27,8 @@ const GameBoardAI = ({ playerCards, updateLeaderboard, onExit }) => {
     if (rollingDice || gameOver) return;
 
     setRollingDice(true);
-    const playerRoll = Math.round(Math.random() * 6) + 1;
-    const enemyRoll = Math.round(Math.random() * 6) + 1;
+    const playerRoll = Math.round(Math.random() * 5) + 1;
+    const enemyRoll = Math.round(Math.random() * 5) + 1;
 
     setPlayerDice(playerRoll);
     setEnemyDice(enemyRoll);
